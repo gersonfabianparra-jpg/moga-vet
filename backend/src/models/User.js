@@ -21,6 +21,11 @@ const User = {
     const { data } = await supabase.from("users").select("*").eq("email", email).single();
     return data ?? null;
   },
+  findByUsername: async (username) => {
+    if (useLocal()) return store.users.findByUsername(username);
+    const { data } = await supabase.from("users").select("*").eq("username", username).single();
+    return data ?? null;
+  },
   findByRutOrEmail: async (query) => {
     if (useLocal()) return store.users.findByRutOrEmail(query);
     const byRut = await supabase.from("users").select("*").eq("rut", query).single();
@@ -33,6 +38,18 @@ const User = {
     const { data, error } = await supabase.from("users").insert([user]).select().single();
     if (error) throw error;
     return data;
+  },
+  update: async (id, fields) => {
+    if (useLocal()) return store.users.update(id, fields);
+    const { data, error } = await supabase.from("users").update(fields).eq("id", id).select().single();
+    if (error) throw error;
+    return data;
+  },
+  remove: async (id) => {
+    if (useLocal()) return store.users.remove(id);
+    const { error } = await supabase.from("users").delete().eq("id", id);
+    if (error) throw error;
+    return true;
   },
 };
 

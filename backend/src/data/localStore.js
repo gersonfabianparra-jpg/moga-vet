@@ -1,15 +1,16 @@
 // Datos locales de prueba — se usan cuando Supabase no está configurado
 let users = [
-  { id:1, name:"Dra. María González", email:"admin@moga.cl", password:"admin123", role:"admin", phone:"+56 9 1234 5678", rut:null, avatar:"MG" },
-  { id:2, name:"Dr. Carlos Pérez",    email:"vet@moga.cl",   password:"vet123",   role:"vet",   phone:"+56 9 8765 4321", rut:null, avatar:"CP" },
-  { id:3, name:"Ana Torres",          email:"ana@email.cl",  password:"123456",   role:"client",phone:"+56 9 1111 2222", rut:"12.345.678-9" },
-  { id:4, name:"Pedro Soto",          email:"pedro@email.cl",password:"123456",   role:"client",phone:"+56 9 3333 4444", rut:"9.876.543-2" },
+  { id:1, name:"Administrador Root", username:"root", email:"root@moga.cl", password:"admin123", role:"admin", isRoot:true, phone:"+56 9 0000 0000", rut:null, avatar:"RO" },
+  { id:2, name:"Dra. María González", email:"admin@moga.cl", password:"admin123", role:"admin", phone:"+56 9 1234 5678", rut:null, avatar:"MG" },
+  { id:3, name:"Dr. Carlos Pérez",    email:"vet@moga.cl",   password:"vet123",   role:"vet",   phone:"+56 9 8765 4321", rut:null, avatar:"CP" },
+  { id:4, name:"Ana Torres",          email:"ana@email.cl",  password:"123456",   role:"client",phone:"+56 9 1111 2222", rut:"12.345.678-9" },
+  { id:5, name:"Pedro Soto",          email:"pedro@email.cl",password:"123456",   role:"client",phone:"+56 9 3333 4444", rut:"9.876.543-2" },
 ];
 let pets = [
-  { id:1, name:"Luna",  species:"Perro", breed:"Labrador Dorado",  age:3, weight:25.5, color:"Dorado",        gender:"Hembra", chip:"985141002123456", ownerId:3 },
-  { id:2, name:"Michi", species:"Gato",  breed:"Siamés",           age:5, weight:4.2,  color:"Blanco/Café",   gender:"Macho",  chip:"985141009876543", ownerId:3 },
-  { id:3, name:"Rocky", species:"Perro", breed:"Bulldog Francés",  age:2, weight:12.0, color:"Atigrado",      gender:"Macho",  chip:"985141005432198", ownerId:4 },
-  { id:4, name:"Nala",  species:"Perro", breed:"Golden Retriever", age:4, weight:28.0, color:"Dorado oscuro", gender:"Hembra", chip:"985141001357924", ownerId:4 },
+  { id:1, name:"Luna",  species:"Perro", breed:"Labrador Dorado",  age:3, weight:25.5, color:"Dorado",        gender:"Hembra", chip:"985141002123456", ownerId:4 },
+  { id:2, name:"Michi", species:"Gato",  breed:"Siamés",           age:5, weight:4.2,  color:"Blanco/Café",   gender:"Macho",  chip:"985141009876543", ownerId:4 },
+  { id:3, name:"Rocky", species:"Perro", breed:"Bulldog Francés",  age:2, weight:12.0, color:"Atigrado",      gender:"Macho",  chip:"985141005432198", ownerId:5 },
+  { id:4, name:"Nala",  species:"Perro", breed:"Golden Retriever", age:4, weight:28.0, color:"Dorado oscuro", gender:"Hembra", chip:"985141001357924", ownerId:5 },
 ];
 let records = [
   { id:1, petId:1, date:"2024-01-15", vet:"Dra. María González", type:"Control",  diagnosis:"Animal sano, control rutinario",        treatment:"Vacuna antirrábica y desparasitación", weight:24.8, temperature:"38.5", notes:"Mascota en excelente condición corporal.", nextVisit:"2025-01-15" },
@@ -19,11 +20,11 @@ let records = [
   { id:5, petId:4, date:"2024-11-20", vet:"Dra. María González", type:"Control",  diagnosis:"Control post-operatorio esterilización", treatment:"Antibiótico 5 días + AINE 3 días",     weight:27.5, temperature:"38.4", notes:"Cicatrización excelente.",                 nextVisit:"2024-12-05" },
 ];
 let grooming = [
-  { id:1, petId:1, clientId:3, date:"2026-04-28", time:"10:00", service:"Baño y corte completo",          status:"confirmada", notes:"Traer sin collar",       price:18000 },
-  { id:2, petId:3, clientId:4, date:"2026-05-02", time:"14:30", service:"Baño y secado",                  status:"pendiente",  notes:"Shampoo hipoalergénico", price:12000 },
-  { id:3, petId:2, clientId:3, date:"2026-04-20", time:"11:00", service:"Corte de uñas + limpieza ótica", status:"completada", notes:"",                       price:8000  },
-  { id:4, petId:4, clientId:4, date:"2026-05-05", time:"09:00", service:"Baño y corte completo",          status:"confirmada", notes:"",                       price:20000 },
-  { id:5, petId:2, clientId:3, date:"2026-05-12", time:"15:00", service:"Baño y secado",                  status:"pendiente",  notes:"",                       price:10000 },
+  { id:1, petId:1, clientId:4, date:"2026-04-28", time:"10:00", service:"Baño y corte completo",          status:"confirmada", notes:"Traer sin collar",       price:18000 },
+  { id:2, petId:3, clientId:5, date:"2026-05-02", time:"14:30", service:"Baño y secado",                  status:"pendiente",  notes:"Shampoo hipoalergénico", price:12000 },
+  { id:3, petId:2, clientId:4, date:"2026-04-20", time:"11:00", service:"Corte de uñas + limpieza ótica", status:"completada", notes:"",                       price:8000  },
+  { id:4, petId:4, clientId:5, date:"2026-05-05", time:"09:00", service:"Baño y corte completo",          status:"confirmada", notes:"",                       price:20000 },
+  { id:5, petId:2, clientId:4, date:"2026-05-12", time:"15:00", service:"Baño y secado",                  status:"pendiente",  notes:"",                       price:10000 },
 ];
 let vaccines = [
   { id:1, petId:1, name:"Antirrábica",     dateApplied:"2025-01-15", nextDue:"2026-01-15", vet:"Dra. María González", lot:"VR2025-A01" },
@@ -36,26 +37,38 @@ let vaccines = [
   { id:8, petId:4, name:"Sétuple canina",  dateApplied:"2025-11-20", nextDue:"2026-11-20", vet:"Dra. María González", lot:"SC2025-H08" },
 ];
 let payments = [
-  { id:1, concept:"Consulta — Control rutinario Luna",      petId:1, clientId:3, date:"2024-01-15", amount:25000,  category:"Consulta",      status:"pagado",    method:"Débito"       },
-  { id:2, concept:"Urgencia — Otitis externa Luna",         petId:1, clientId:3, date:"2024-07-20", amount:45000,  category:"Urgencia",      status:"pagado",    method:"Efectivo"     },
-  { id:3, concept:"Consulta — Control anual Michi",         petId:2, clientId:3, date:"2024-03-10", amount:25000,  category:"Consulta",      status:"pagado",    method:"Transferencia"},
-  { id:4, concept:"Limpieza dental Rocky",                  petId:3, clientId:4, date:"2024-09-05", amount:85000,  category:"Procedimiento", status:"pagado",    method:"Crédito"      },
-  { id:5, concept:"Cirugía esterilización Nala",            petId:4, clientId:4, date:"2024-11-20", amount:180000, category:"Cirugía",       status:"pagado",    method:"Transferencia"},
-  { id:6, concept:"Peluquería — Corte uñas Michi",          petId:2, clientId:3, date:"2026-04-20", amount:8000,   category:"Peluquería",    status:"pagado",    method:"Efectivo"     },
-  { id:7, concept:"Peluquería — Baño y corte Luna",         petId:1, clientId:3, date:"2026-04-28", amount:18000,  category:"Peluquería",    status:"pendiente", method:null           },
-  { id:8, concept:"Peluquería — Baño Rocky",                petId:3, clientId:4, date:"2026-05-02", amount:12000,  category:"Peluquería",    status:"pendiente", method:null           },
-  { id:9, concept:"Peluquería — Baño y corte Nala",         petId:4, clientId:4, date:"2026-05-05", amount:20000,  category:"Peluquería",    status:"pendiente", method:null           },
+  { id:1, concept:"Consulta — Control rutinario Luna",      petId:1, clientId:4, date:"2024-01-15", amount:25000,  category:"Consulta",      status:"pagado",    method:"Débito"       },
+  { id:2, concept:"Urgencia — Otitis externa Luna",         petId:1, clientId:4, date:"2024-07-20", amount:45000,  category:"Urgencia",      status:"pagado",    method:"Efectivo"     },
+  { id:3, concept:"Consulta — Control anual Michi",         petId:2, clientId:4, date:"2024-03-10", amount:25000,  category:"Consulta",      status:"pagado",    method:"Transferencia"},
+  { id:4, concept:"Limpieza dental Rocky",                  petId:3, clientId:5, date:"2024-09-05", amount:85000,  category:"Procedimiento", status:"pagado",    method:"Crédito"      },
+  { id:5, concept:"Cirugía esterilización Nala",            petId:4, clientId:5, date:"2024-11-20", amount:180000, category:"Cirugía",       status:"pagado",    method:"Transferencia"},
+  { id:6, concept:"Peluquería — Corte uñas Michi",          petId:2, clientId:4, date:"2026-04-20", amount:8000,   category:"Peluquería",    status:"pagado",    method:"Efectivo"     },
+  { id:7, concept:"Peluquería — Baño y corte Luna",         petId:1, clientId:4, date:"2026-04-28", amount:18000,  category:"Peluquería",    status:"pendiente", method:null           },
+  { id:8, concept:"Peluquería — Baño Rocky",                petId:3, clientId:5, date:"2026-05-02", amount:12000,  category:"Peluquería",    status:"pendiente", method:null           },
+  { id:9, concept:"Peluquería — Baño y corte Nala",         petId:4, clientId:5, date:"2026-05-05", amount:20000,  category:"Peluquería",    status:"pendiente", method:null           },
 ];
 
 const nextId = (arr) => Math.max(0, ...arr.map((x) => x.id)) + 1;
 
 export const store = {
   users: {
-    findAll:         ()      => [...users],
-    findById:        (id)    => users.find((u) => u.id === id) ?? null,
-    findByEmail:     (email) => users.find((u) => u.email === email) ?? null,
-    findByRutOrEmail:(q)     => users.find((u) => u.rut === q || u.email === q) ?? null,
-    create:          (u)     => { const rec = { ...u, id: nextId(users) }; users.push(rec); return rec; },
+    findAll:            ()       => [...users],
+    findById:           (id)     => users.find((u) => u.id === id) ?? null,
+    findByEmail:        (email)  => users.find((u) => u.email === email) ?? null,
+    findByUsername:     (uname)  => users.find((u) => u.username === uname) ?? null,
+    findByRutOrEmail:   (q)      => users.find((u) => u.rut === q || u.email === q) ?? null,
+    create:             (u)      => { const rec = { ...u, id: nextId(users) }; users.push(rec); return rec; },
+    update:             (id, fields) => {
+      const i = users.findIndex((u) => u.id === id);
+      if (i === -1) throw new Error("No encontrado");
+      users[i] = { ...users[i], ...fields };
+      return { ...users[i] };
+    },
+    remove:             (id) => {
+      const i = users.findIndex((u) => u.id === id);
+      if (i === -1) throw new Error("No encontrado");
+      users.splice(i, 1);
+    },
   },
   pets: {
     findAll:       ()        => [...pets],

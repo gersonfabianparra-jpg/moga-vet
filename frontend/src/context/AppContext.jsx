@@ -4,7 +4,7 @@ import * as recordsService   from "../services/records.service.js";
 import * as groomingService  from "../services/grooming.service.js";
 import * as vaccinesService  from "../services/vaccines.service.js";
 import * as paymentsService  from "../services/payments.service.js";
-import * as usersService     from "../services/users.service.js";
+import * as usersService from "../services/users.service.js";
 
 const AppContext = createContext(null);
 
@@ -25,7 +25,9 @@ function reducer(state, action) {
     case "ADD_GROOMING":   return { ...state, grooming: [...state.grooming, action.payload] };
     case "ADD_VACCINE":    return { ...state, vaccines: [...state.vaccines, action.payload] };
     case "ADD_PAYMENT":    return { ...state, payments: [...state.payments, action.payload] };
-    case "ADD_USER":       return { ...state, users: [...state.users, action.payload] };
+    case "ADD_USER":        return { ...state, users: [...state.users, action.payload] };
+    case "UPDATE_USER":     return { ...state, users: state.users.map((u) => u.id === action.payload.id ? action.payload : u) };
+    case "REMOVE_USER":     return { ...state, users: state.users.filter((u) => u.id !== action.payload) };
     case "UPDATE_GROOMING":
       return { ...state, grooming: state.grooming.map((g) => g.id === action.payload.id ? action.payload : g) };
     case "UPDATE_PAYMENT":
@@ -104,13 +106,22 @@ export function AppProvider({ children }) {
     const data = await usersService.createUser(u);
     dispatch({ type: "ADD_USER", payload: data });
   };
+  const updateUser = async (id, fields) => {
+    const data = await usersService.updateUser(id, fields);
+    dispatch({ type: "UPDATE_USER", payload: data });
+    return data;
+  };
+  const removeUser = async (id) => {
+    await usersService.removeUser(id);
+    dispatch({ type: "REMOVE_USER", payload: id });
+  };
 
   return (
     <AppContext.Provider value={{
       ...state,
       login, logout,
       addPet, addRecord, addGrooming, updateGroomingStatus,
-      addVaccine, addPayment, markPaid, addUser,
+      addVaccine, addPayment, markPaid, addUser, updateUser, removeUser,
     }}>
       {children}
     </AppContext.Provider>

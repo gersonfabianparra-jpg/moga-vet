@@ -83,7 +83,7 @@ export default function LoginView() {
           <div style={{ background:"#fff", borderRadius:16, padding:28, boxShadow:"0 4px 16px rgba(0,0,0,0.08)" }}>
             {tab === "staff" ? (
               <>
-                <Input label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@moga.cl"/>
+                <Input label="Correo o usuario" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="root · admin@moga.cl"/>
                 <Input label="Contraseña" type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••"/>
                 {err && <div style={{ color:T.redText, fontSize:13, marginBottom:14, padding:"10px 14px", background:T.red, borderRadius:8 }}>{err}</div>}
                 <Btn style={{ width:"100%", justifyContent:"center" }} onClick={doStaff} disabled={loading}>
