@@ -27,8 +27,10 @@ app.use("/api/users", usersRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🐾 MOGA Backend corriendo en http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🐾 MOGA Backend corriendo en http://localhost:${PORT}`);
+  });
+}
 
 export default app;
