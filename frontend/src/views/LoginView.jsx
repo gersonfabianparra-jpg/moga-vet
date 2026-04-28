@@ -37,14 +37,14 @@ export default function LoginView() {
   return (
     <div style={{ minHeight:"100vh", display:"grid", gridTemplateColumns:"1fr 1fr", fontFamily:T.font }}>
       {/* Panel izquierdo */}
-      <div style={{ background:"linear-gradient(160deg,#061008 0%,#0d2e1a 50%,#1a4731 100%)", display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"48px 52px", position:"relative", overflow:"hidden" }}>
+      <div style={{ background:`linear-gradient(160deg,${T.sb} 0%,#162032 60%,#1e3a52 100%)`, display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"48px 52px", position:"relative", overflow:"hidden" }}>
         <div>
           <div style={{ marginBottom:60 }}>
             <div style={{ background:"#fff", borderRadius:12, padding:"10px 16px", display:"inline-block" }}>
               <img src="/logo.png" alt="MOGA" style={{ width:140, display:"block" }}/>
             </div>
           </div>
-          <h2 style={{ fontSize:38, fontWeight:900, color:"#fff", fontFamily:T.fontDisplay, lineHeight:1.1, marginBottom:16 }}>
+          <h2 style={{ fontSize:38, fontWeight:900, color:"#fff", fontFamily:T.font, lineHeight:1.1, marginBottom:16 }}>
             La clínica de tus mascotas,<br/>en un solo lugar.
           </h2>
           <p style={{ fontSize:15, color:"rgba(255,255,255,0.5)", lineHeight:1.7, maxWidth:380 }}>
@@ -54,8 +54,8 @@ export default function LoginView() {
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
           {[ ["📋","Fichas médicas completas"],["💉","Alertas de vacunación"],["✂️","Agenda de peluquería"],["💳","Historial de pagos"] ].map(([ic,tx]) => (
             <div key={tx} style={{ display:"flex", alignItems:"center", gap:12 }}>
-              <div style={{ width:32, height:32, borderRadius:8, background:"rgba(255,255,255,0.07)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>{ic}</div>
-              <span style={{ fontSize:14, color:"rgba(255,255,255,0.6)", fontFamily:T.font }}>{tx}</span>
+              <div style={{ width:32, height:32, borderRadius:8, background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>{ic}</div>
+              <span style={{ fontSize:14, color:"rgba(255,255,255,0.55)", fontFamily:T.font }}>{tx}</span>
             </div>
           ))}
         </div>

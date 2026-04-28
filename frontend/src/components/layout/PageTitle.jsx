@@ -2,19 +2,35 @@ import T from "../../styles/tokens.js";
 
 export default function PageTitle({ icon, title, sub, action }) {
   return (
-    <div style={{ padding:"28px 36px 22px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+    <div style={{
+      padding: "28px 0 20px",
+      display: "flex", justifyContent: "space-between", alignItems: "center",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{
-          width:42, height:42, borderRadius:12,
-          background:`linear-gradient(135deg, ${T.brand}, ${T.brandMid})`,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:20, boxShadow:"0 4px 12px rgba(10,46,28,0.25)",
+          width: 44, height: 44, borderRadius: 13,
+          background: `linear-gradient(135deg, ${T.brand}, ${T.brandMid})`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 20,
+          boxShadow: `0 6px 18px rgba(5,150,105,0.3)`,
         }}>
           {icon}
         </div>
         <div>
-          <h1 style={{ fontSize:20, fontWeight:800, color:T.text, fontFamily:T.font, lineHeight:1 }}>{title}</h1>
-          {sub && <p style={{ fontSize:13, color:T.textMuted, marginTop:4, fontFamily:T.font }}>{sub}</p>}
+          <h1 style={{
+            fontSize: 22, fontWeight: 800, color: T.text,
+            fontFamily: T.font, lineHeight: 1, letterSpacing: "-0.3px",
+          }}>
+            {title}
+          </h1>
+          {sub && (
+            <p style={{
+              fontSize: 13, color: T.textMuted,
+              marginTop: 4, fontFamily: T.font,
+            }}>
+              {sub}
+            </p>
+          )}
         </div>
       </div>
       {action}
