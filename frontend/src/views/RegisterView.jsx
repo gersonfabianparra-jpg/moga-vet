@@ -1,5 +1,6 @@
 import { useState } from "react";
 import VetOSLogo from "../components/ui/VetOSLogo.jsx";
+import ECGLine   from "../components/ui/ECGLine.jsx";
 import T from "../styles/tokens.js";
 import Input  from "../components/ui/Input.jsx";
 import Select from "../components/ui/Select.jsx";
@@ -61,8 +62,18 @@ export default function RegisterView({ onLogin }) {
       <div style={{ background:"linear-gradient(160deg,#0F0F1A 0%,#1e1b4b 55%,#312e81 100%)", display:"flex", flexDirection:"column", padding:"48px 52px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", top:"30%", left:"-5%", width:350, height:350, borderRadius:"50%", background:"radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)", pointerEvents:"none" }} />
 
-        <div style={{ marginBottom:48 }}>
-          <VetOSLogo size={36} white />
+        {/* Logo hero */}
+        <div style={{ marginBottom:20, filter:"drop-shadow(0 0 24px rgba(99,102,241,0.45))" }}>
+          <VetOSLogo size={72} white hero />
+        </div>
+        <div style={{ marginBottom:6 }}>
+          <div style={{ fontSize:36, fontWeight:900, color:"#fff", letterSpacing:"-0.04em", lineHeight:1 }}>
+            Vet<span style={{ color:"#818CF8" }}>OS</span>
+          </div>
+          <div style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.28)", letterSpacing:"0.2em", textTransform:"uppercase", marginTop:4 }}>Platform</div>
+        </div>
+        <div style={{ width:"100%", maxWidth:300, marginBottom:28, marginTop:10 }}>
+          <ECGLine color="rgba(129,140,248,0.45)" height={22} strokeWidth={1.8} />
         </div>
 
         <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
@@ -92,7 +103,10 @@ export default function RegisterView({ onLogin }) {
           </div>
         </div>
 
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)", marginTop:40 }}>
+        <div style={{ marginTop:"auto", paddingTop:24, opacity:0.3 }}>
+          <ECGLine color="rgba(129,140,248,0.8)" height={18} strokeWidth={1.3} />
+        </div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)", marginTop:12 }}>
           ¿Ya tienes cuenta?{" "}
           <span onClick={onLogin} style={{ color:"rgba(255,255,255,0.6)", cursor:"pointer", fontWeight:700, textDecoration:"underline" }}>
             Inicia sesión

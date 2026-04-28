@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { loginStaff, loginClient } from "../services/auth.service.js";
 import T from "../styles/tokens.js";
-import Input from "../components/ui/Input.jsx";
-import Btn   from "../components/ui/Btn.jsx";
+import Input    from "../components/ui/Input.jsx";
+import Btn      from "../components/ui/Btn.jsx";
 import VetOSLogo from "../components/ui/VetOSLogo.jsx";
+import ECGLine   from "../components/ui/ECGLine.jsx";
 
 export default function LoginView({ onRegister }) {
   const { login } = useApp();
@@ -38,59 +39,98 @@ export default function LoginView({ onRegister }) {
   return (
     <div style={{ minHeight:"100vh", display:"grid", gridTemplateColumns:"1fr 1fr", fontFamily:T.font }}>
 
-      {/* Panel izquierdo */}
-      <div style={{ background:"linear-gradient(160deg,#0F0F1A 0%,#1e1b4b 55%,#312e81 100%)", display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"48px 52px", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:"25%", left:"-5%", width:380, height:380, borderRadius:"50%", background:"radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)", pointerEvents:"none" }} />
+      {/* ── Panel izquierdo — identidad VetOS ───────────────────────── */}
+      <div style={{
+        background: "linear-gradient(160deg,#0F0F1A 0%,#1a1740 50%,#2d2a7a 100%)",
+        display: "flex", flexDirection: "column",
+        padding: "48px 52px", position: "relative", overflow: "hidden",
+      }}>
+        {/* Orbes de fondo */}
+        <div style={{ position:"absolute", top:"15%", left:"-10%", width:450, height:450, borderRadius:"50%", background:"radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 65%)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:"5%", right:"-5%", width:300, height:300, borderRadius:"50%", background:"radial-gradient(circle, rgba(129,140,248,0.12) 0%, transparent 65%)", pointerEvents:"none" }} />
 
-        <div>
-          <div style={{ marginBottom:52 }}>
-            <VetOSLogo size={36} white />
+        {/* Logo hero — protagonista */}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"flex-start" }}>
+          {/* Ícono grande */}
+          <div style={{
+            marginBottom: 24,
+            filter: "drop-shadow(0 0 32px rgba(99,102,241,0.5))",
+          }}>
+            <VetOSLogo size={88} white hero />
           </div>
-          <h2 style={{ fontSize:36, fontWeight:900, color:"#fff", fontFamily:T.font, lineHeight:1.1, marginBottom:14, letterSpacing:"-0.03em" }}>
-            Gestiona tu clínica<br/>desde un solo lugar.
-          </h2>
-          <p style={{ fontSize:15, color:"rgba(255,255,255,0.4)", lineHeight:1.7, maxWidth:360 }}>
-            La plataforma de gestión veterinaria que crece con tu negocio.
+
+          {/* Nombre */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{
+              fontSize: 48, fontWeight: 900, color: "#fff",
+              letterSpacing: "-0.04em", lineHeight: 1, fontFamily: T.font,
+            }}>
+              Vet<span style={{ color: "#818CF8" }}>OS</span>
+            </div>
+            <div style={{
+              fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.28)",
+              letterSpacing: "0.22em", textTransform: "uppercase", marginTop: 6,
+            }}>
+              Platform
+            </div>
+          </div>
+
+          {/* ECG decorativa */}
+          <div style={{ width:"100%", maxWidth:320, marginBottom:28, marginTop:12 }}>
+            <ECGLine color="rgba(129,140,248,0.5)" height={28} strokeWidth={2} />
+          </div>
+
+          <p style={{ fontSize:16, color:"rgba(255,255,255,0.45)", lineHeight:1.7, maxWidth:340, marginBottom:36 }}>
+            El sistema operativo para tu veterinaria. Gestión completa de pacientes, citas y más.
           </p>
+
+          {/* Features pill badges */}
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {["🗓 Agenda","🐾 Mascotas","💉 Vacunas","💳 Pagos","✂️ Peluquería"].map((f) => (
+              <span key={f} style={{
+                fontSize:12, fontWeight:600,
+                color:"rgba(255,255,255,0.55)",
+                background:"rgba(255,255,255,0.06)",
+                border:"1px solid rgba(255,255,255,0.08)",
+                borderRadius:100, padding:"5px 12px",
+              }}>{f}</span>
+            ))}
+          </div>
         </div>
 
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-          {[
-            ["🗓","Agenda inteligente con tiempo real"],
-            ["📋","Fichas médicas y vacunas"],
-            ["✂️","Módulo de peluquería"],
-            ["💳","Control de pagos y facturación"],
-          ].map(([ic,tx]) => (
-            <div key={tx} style={{ display:"flex", alignItems:"center", gap:12 }}>
-              <div style={{ width:32, height:32, borderRadius:8, background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>{ic}</div>
-              <span style={{ fontSize:14, color:"rgba(255,255,255,0.45)", fontFamily:T.font }}>{tx}</span>
-            </div>
-          ))}
+        {/* ECG footer */}
+        <div style={{ marginTop:32, opacity:0.35 }}>
+          <ECGLine color="rgba(129,140,248,0.8)" height={20} strokeWidth={1.5} />
         </div>
       </div>
 
-      {/* Panel derecho */}
+      {/* ── Panel derecho — formulario ───────────────────────────────── */}
       <div style={{ background:T.appBg, display:"flex", alignItems:"center", justifyContent:"center", padding:40 }}>
         <div className="fade-up" style={{ width:"100%", maxWidth:400 }}>
-          <h3 style={{ fontSize:24, fontWeight:800, color:T.text, fontFamily:T.font, marginBottom:4 }}>Iniciar sesión</h3>
+
+          <h3 style={{ fontSize:24, fontWeight:800, color:T.text, marginBottom:4 }}>
+            Iniciar sesión
+          </h3>
           <p style={{ fontSize:14, color:T.textMuted, marginBottom:24 }}>
             Selecciona tu tipo de acceso
           </p>
 
-          <div style={{ display:"flex", background:"#fff", borderRadius:12, padding:4, marginBottom:24 }}>
-            {[ ["staff","👨‍⚕️ Personal clínica"],["client","🐾 Portal cliente"] ].map(([id,lbl]) => (
+          <div style={{ display:"flex", background:"#fff", borderRadius:12, padding:4, marginBottom:24, boxShadow:T.sm }}>
+            {[["staff","👨‍⚕️ Personal clínica"],["client","🐾 Portal cliente"]].map(([id,lbl]) => (
               <button key={id} onClick={() => { setTab(id); setErr(""); }} style={{
-                flex:1, padding:"9px 0", border:"none", cursor:"pointer", fontSize:13, fontWeight:600,
-                borderRadius:10, fontFamily:T.font, transition:"all 0.2s",
+                flex:1, padding:"9px 0", border:"none", cursor:"pointer",
+                fontSize:13, fontWeight:600, borderRadius:10, fontFamily:T.font,
+                transition:"all 0.2s",
                 background: tab===id ? T.brand : "transparent",
                 color: tab===id ? "#fff" : T.textMuted,
+                boxShadow: tab===id ? "0 2px 8px rgba(99,102,241,0.3)" : "none",
               }}>
                 {lbl}
               </button>
             ))}
           </div>
 
-          <div style={{ background:"#fff", borderRadius:16, padding:28, boxShadow:"0 4px 20px rgba(99,102,241,0.08)" }}>
+          <div style={{ background:"#fff", borderRadius:16, padding:28, boxShadow:"0 4px 24px rgba(99,102,241,0.1)" }}>
             {tab === "staff" ? (
               <>
                 <Input label="Correo o usuario" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@tuclinica.cl"/>
