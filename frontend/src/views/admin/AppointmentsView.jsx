@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "../../context/AppContext.jsx";
-import { useNotification } from "../../context/NotificationContext.jsx";
+import { useNotify } from "../../context/NotificationContext.jsx";
 import T from "../../styles/tokens.js";
 import { fmtDate, spIcon } from "../../styles/helpers.js";
 import Modal from "../../components/ui/Modal.jsx";
@@ -77,7 +77,7 @@ const emptyForm = (date = "", time = "") => ({
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AppointmentsView() {
   const { appointments, pets, users, addAppointment, updateAppointment, removeAppointment } = useApp();
-  const { notify } = useNotification();
+  const notify = useNotify();
 
   const [weekStart, setWeekStart] = useState(() => getMondayOf(new Date()));
   const [nowTop, setNowTop]       = useState(null);

@@ -1,10 +1,13 @@
 // Datos locales de prueba — se usan cuando Supabase no está configurado
+let tenants = [
+  { id:1, name:"MOGA Veterinaria", adminEmail:"admin@moga.cl", phone:"+56 9 1234 5678", city:"Santiago", plan:"Clínica", status:"active", createdAt:"2026-01-01" },
+];
 let users = [
-  { id:1, name:"Administrador Root", username:"root", email:"root@moga.cl", password:"admin123", role:"admin", isRoot:true, phone:"+56 9 0000 0000", rut:null, avatar:"RO" },
-  { id:2, name:"Dra. María González", email:"admin@moga.cl", password:"admin123", role:"admin", phone:"+56 9 1234 5678", rut:null, avatar:"MG" },
-  { id:3, name:"Dr. Carlos Pérez",    email:"vet@moga.cl",   password:"vet123",   role:"vet",   phone:"+56 9 8765 4321", rut:null, avatar:"CP" },
-  { id:4, name:"Ana Torres",          email:"ana@email.cl",  password:"123456",   role:"client",phone:"+56 9 1111 2222", rut:"12.345.678-9" },
-  { id:5, name:"Pedro Soto",          email:"pedro@email.cl",password:"123456",   role:"client",phone:"+56 9 3333 4444", rut:"9.876.543-2" },
+  { id:1, name:"Administrador Root", username:"root", email:"root@vetos.cl",  password:"admin123", role:"superadmin", isRoot:true,  phone:"+56 9 0000 0000", rut:null, avatar:"RO", tenantId:null },
+  { id:2, name:"Dra. María González", email:"admin@moga.cl", password:"admin123", role:"admin",      phone:"+56 9 1234 5678", rut:null, avatar:"MG", tenantId:1 },
+  { id:3, name:"Dr. Carlos Pérez",    email:"vet@moga.cl",   password:"vet123",   role:"vet",        phone:"+56 9 8765 4321", rut:null, avatar:"CP", tenantId:1 },
+  { id:4, name:"Ana Torres",          email:"ana@email.cl",  password:"123456",   role:"client",     phone:"+56 9 1111 2222", rut:"12.345.678-9",  tenantId:1 },
+  { id:5, name:"Pedro Soto",          email:"pedro@email.cl",password:"123456",   role:"client",     phone:"+56 9 3333 4444", rut:"9.876.543-2",   tenantId:1 },
 ];
 let pets = [
   { id:1, name:"Luna",  species:"Perro", breed:"Labrador Dorado",  age:3, weight:25.5, color:"Dorado",        gender:"Hembra", chip:"985141002123456", ownerId:4 },
@@ -61,6 +64,18 @@ let payments = [
 const nextId = (arr) => Math.max(0, ...arr.map((x) => x.id)) + 1;
 
 export const store = {
+  tenants: {
+    findAll:      ()      => [...tenants].sort((a,b) => b.createdAt.localeCompare(a.createdAt)),
+    findById:     (id)    => tenants.find((t) => t.id === id) ?? null,
+    findByEmail:  (email) => tenants.find((t) => t.adminEmail === email) ?? null,
+    create: (t) => { const rec = { ...t, id: nextId(tenants) }; tenants.push(rec); return rec; },
+    update: (id, fields) => {
+      const i = tenants.findIndex((t) => t.id === id);
+      if (i === -1) throw new Error("No encontrado");
+      tenants[i] = { ...tenants[i], ...fields };
+      return { ...tenants[i] };
+    },
+  },
   users: {
     findAll:            ()       => [...users],
     findById:           (id)     => users.find((u) => u.id === id) ?? null,

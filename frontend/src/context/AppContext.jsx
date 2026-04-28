@@ -58,7 +58,7 @@ export function AppProvider({ children }) {
         groomingService.getGrooming(),
         vaccinesService.getVaccines(),
         paymentsService.getPayments(),
-        appointmentsService.getAppointments(),
+        appointmentsService.getAppointments().catch(() => []),
       ]);
       dispatch({ type: "SET_DATA", payload: { users, pets, records, grooming, vaccines, payments, appointments } });
     } catch (err) {

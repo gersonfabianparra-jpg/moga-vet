@@ -1,5 +1,6 @@
 import T from "../../styles/tokens.js";
 import Avatar from "../ui/Avatar.jsx";
+import VetOSLogo from "../ui/VetOSLogo.jsx";
 
 const NAV = [
   { id:"overview",  icon:"▦",  label:"Inicio" },
@@ -28,22 +29,7 @@ export default function Sidebar({ user, activeTab, onTab, onLogout, badges = {} 
 
       {/* Logo */}
       <div style={{ padding: "22px 20px 18px" }}>
-        <div style={{
-          background: "#fff",
-          borderRadius: 10,
-          padding: "9px 14px",
-          display: "inline-flex",
-          alignItems: "center",
-        }}>
-          <img src="/logo.png" alt="MOGA" style={{ width: 110, display: "block" }} />
-        </div>
-        <div style={{
-          fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.22)",
-          letterSpacing: "0.2em", marginTop: 10, paddingLeft: 2, fontFamily: T.font,
-          textTransform: "uppercase",
-        }}>
-          Sistema Veterinario
-        </div>
+        <VetOSLogo size={30} white />
       </div>
 
       {/* Nav */}

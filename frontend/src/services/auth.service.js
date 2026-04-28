@@ -8,3 +8,6 @@ export const loginClient = (query) =>
 
 export const getMe = () =>
   api.get("/auth/me").then((r) => r.data);
+
+export const registerClinic = (data) =>
+  api.post("/tenants/register", data).then((r) => r.data);

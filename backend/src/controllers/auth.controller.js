@@ -1,10 +1,10 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-const isRootUser = (user) => user?.rut === "__root__" || user?.username === "root";
+const isRootUser = (user) => user?.role === "superadmin" || user?.rut === "__root__" || user?.username === "root";
 
 const sign = (user) =>
-  jwt.sign({ id: user.id, role: user.role, isRoot: isRootUser(user) }, process.env.JWT_SECRET, { expiresIn: "8h" });
+  jwt.sign({ id: user.id, role: user.role, tenantId: user.tenantId ?? null, isRoot: isRootUser(user) }, process.env.JWT_SECRET, { expiresIn: "8h" });
 
 const safeUser = ({ password, ...rest }) => ({
   ...rest,

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import VetOSLogo from "../../components/ui/VetOSLogo.jsx";
 import { useApp } from "../../context/AppContext.jsx";
 import T from "../../styles/tokens.js";
 import { fmtDate, fmtCLP, spIcon, vaxStatus } from "../../styles/helpers.js";
@@ -61,9 +62,8 @@ export default function ClientPortal() {
       {/* Header */}
       <div style={{ background:T.sb, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 36px", height:64, boxShadow:"0 2px 20px rgba(0,0,0,0.2)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#1d6b3f,#2d9a5c)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🐾</div>
-          <div style={{ fontFamily:T.fontDisplay, fontSize:22, fontWeight:900, color:"#fff", letterSpacing:"0.04em" }}>MOGA</div>
-          <div style={{ width:1, height:18, background:"rgba(255,255,255,0.15)", margin:"0 8px" }}/>
+          <VetOSLogo size={28} white />
+          <div style={{ width:1, height:18, background:"rgba(255,255,255,0.15)", margin:"0 4px" }}/>
           <span style={{ fontSize:12, color:"rgba(255,255,255,0.45)", letterSpacing:"0.1em", textTransform:"uppercase", fontWeight:600 }}>Portal Cliente</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
