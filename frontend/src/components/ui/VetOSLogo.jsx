@@ -17,15 +17,18 @@ export default function VetOSLogo({ size = 32, white = false, showText = true })
         </defs>
         <rect width="40" height="40" rx="11" fill="url(#vetosGrad)"/>
 
-        {/* Línea ECG — más limpia y proporcionada */}
+        {/* Línea ECG */}
         <path
-          d="M4 21 L10 21 L13 12 L17 30 L20 18 L23 24 L26 21 L36 21"
+          d="M3 21 L9 21 L12 12 L16 30 L19 18 L22 24 L25 21 L30 21"
           stroke={stroke} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"
         />
 
-        {/* Punto pulsante al final */}
-        <circle cx="36" cy="21" r="2.2" fill={stroke} opacity="0.9"/>
-        <circle cx="36" cy="21" r="4" fill={stroke} opacity="0.15"/>
+        {/* Pata al final de la línea */}
+        <ellipse cx="34" cy="23.5" rx="2.8" ry="2.2" fill={stroke} opacity="0.92"/>
+        <circle cx="31"   cy="20.2" r="1.35" fill={stroke} opacity="0.92"/>
+        <circle cx="33.5" cy="19.2" r="1.35" fill={stroke} opacity="0.92"/>
+        <circle cx="36.2" cy="19.8" r="1.35" fill={stroke} opacity="0.92"/>
+        <circle cx="37.8" cy="22"   r="1.15" fill={stroke} opacity="0.92"/>
       </svg>
 
       {showText && (

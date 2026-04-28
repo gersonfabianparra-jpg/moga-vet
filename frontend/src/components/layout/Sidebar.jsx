@@ -13,7 +13,7 @@ const NAV = [
   { id:"users",        icon:"👥", label:"Clientes" },
 ];
 
-export default function Sidebar({ user, activeTab, onTab, onLogout, badges = {} }) {
+export default function Sidebar({ user, activeTab, onTab, onLogout, onSearch, badges = {} }) {
   return (
     <div style={{
       width: 240,
@@ -28,8 +28,27 @@ export default function Sidebar({ user, activeTab, onTab, onLogout, badges = {} 
     }}>
 
       {/* Logo */}
-      <div style={{ padding: "22px 20px 18px" }}>
+      <div style={{ padding: "22px 20px 14px" }}>
         <VetOSLogo size={30} white />
+      </div>
+
+      {/* Buscador */}
+      <div style={{ padding: "0 12px 10px" }}>
+        <button
+          onClick={onSearch}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 8,
+            padding: "9px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.05)", cursor: "pointer", fontFamily: T.font,
+            color: "rgba(255,255,255,0.35)", fontSize: 13, textAlign: "left",
+          }}
+        >
+          <span style={{ fontSize: 14 }}>🔍</span>
+          <span style={{ flex: 1 }}>Buscar…</span>
+          <kbd style={{ fontSize: 10, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 5, padding: "2px 6px", color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>
+            ⌘K
+          </kbd>
+        </button>
       </div>
 
       {/* Nav */}
