@@ -1,0 +1,34 @@
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+
+import authRoutes from "./routes/auth.routes.js";
+import petsRoutes from "./routes/pets.routes.js";
+import recordsRoutes from "./routes/records.routes.js";
+import groomingRoutes from "./routes/grooming.routes.js";
+import vaccinesRoutes from "./routes/vaccines.routes.js";
+import paymentsRoutes from "./routes/payments.routes.js";
+import usersRoutes from "./routes/users.routes.js";
+import errorHandler from "./middleware/errorHandler.js";
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
+app.use(express.json());
+
+app.use("/api/auth", authRoutes);
+app.use("/api/pets", petsRoutes);
+app.use("/api/records", recordsRoutes);
+app.use("/api/grooming", groomingRoutes);
+app.use("/api/vaccines", vaccinesRoutes);
+app.use("/api/payments", paymentsRoutes);
+app.use("/api/users", usersRoutes);
+
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`🐾 MOGA Backend corriendo en http://localhost:${PORT}`);
+});
+
+export default app;

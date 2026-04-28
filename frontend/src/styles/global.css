@@ -1,0 +1,39 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+
+@keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+@keyframes scaleIn  { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+@keyframes pulse    { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+.fade-up   { animation: fadeUp  0.35s cubic-bezier(0.22,1,0.36,1) both; }
+.fade-up-2 { animation: fadeUp  0.35s 0.05s cubic-bezier(0.22,1,0.36,1) both; }
+.fade-up-3 { animation: fadeUp  0.35s 0.1s  cubic-bezier(0.22,1,0.36,1) both; }
+.fade-up-4 { animation: fadeUp  0.35s 0.15s cubic-bezier(0.22,1,0.36,1) both; }
+.modal-enter { animation: scaleIn 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+
+.hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.14) !important; }
+
+.nav-item { transition: background 0.15s ease, color 0.15s ease; }
+.nav-item:hover { background: rgba(255,255,255,0.07) !important; color: rgba(255,255,255,0.95) !important; }
+
+.moga-input { transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.moga-input:focus { border-color: #2d7a52 !important; box-shadow: 0 0 0 3px rgba(45,122,82,0.15) !important; outline: none; }
+
+.moga-btn { transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease; }
+.moga-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.moga-btn:active { transform: translateY(0); }
+
+.row-hover:hover { background: rgba(45,122,82,0.04) !important; }
+
+.tab-pill { transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
+.tab-pill:hover { color: #111 !important; }
+
+.chip-select { transition: border-color 0.15s ease, background 0.15s ease; }
+.chip-select:hover { border-color: #2d7a52 !important; background: #f0faf5 !important; }
+.chip-select.active { background: #0a2e1c !important; color: #fff !important; border-color: #0a2e1c !important; }

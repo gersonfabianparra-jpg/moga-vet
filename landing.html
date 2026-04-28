@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MOGA Vet — Software de gestión veterinaria</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #0a2e1c;
+      --brand-mid: #1d5c38;
+      --brand-light: #e8f5ee;
+      --gold: #c07c1a;
+      --gold-light: #fdf3e0;
+      --bg: #f5f2eb;
+      --white: #ffffff;
+      --text: #111510;
+      --muted: #6b7566;
+      --border: rgba(0,0,0,0.08);
+      --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --display: 'Fraunces', Georgia, serif;
+      --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+      --shadow-lg: 0 16px 48px rgba(0,0,0,0.12);
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(245,242,235,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; transition: color .15s; }
+    .nav-links a:hover { color: var(--brand); }
+    .nav-cta { display: flex; gap: 12px; }
+    .btn-ghost { padding: 9px 20px; border: 1.5px solid var(--border); border-radius: 10px; background: transparent; color: var(--text); font-size: 14px; font-weight: 600; font-family: var(--font); cursor: pointer; text-decoration: none; transition: all .15s; }
+    .btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
+    .btn-primary { padding: 9px 22px; border: none; border-radius: 10px; background: linear-gradient(135deg, var(--brand), var(--brand-mid)); color: #fff; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; text-decoration: none; transition: opacity .15s, transform .15s; }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(160deg, #061008 0%, #0d2e1a 55%, #1a4731 100%);
+      padding: 100px 48px 90px;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before { content:''; position:absolute; top:-120px; left:50%; transform:translateX(-50%); width:600px; height:600px; border-radius:50%; border:1px solid rgba(255,255,255,0.04); }
+    .hero::after  { content:''; position:absolute; top:-60px;  left:50%; transform:translateX(-50%); width:360px; height:360px; border-radius:50%; border:1px solid rgba(255,255,255,0.06); }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
+      padding: 6px 16px; border-radius: 99px; margin-bottom: 28px;
+    }
+    .hero h1 {
+      font-family: var(--display); font-size: clamp(40px, 6vw, 68px);
+      font-weight: 900; color: #fff; line-height: 1.08; margin-bottom: 20px;
+    }
+    .hero h1 span { color: #5dd18a; }
+    .hero p { font-size: 18px; color: rgba(255,255,255,0.55); max-width: 540px; margin: 0 auto 40px; line-height: 1.7; }
+    .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
+    .btn-hero { padding: 14px 32px; border-radius: 12px; font-size: 16px; font-weight: 700; font-family: var(--font); cursor: pointer; text-decoration: none; transition: all .15s; border: none; }
+    .btn-hero-primary { background: linear-gradient(135deg, #1d6b3f, #2d9a5c); color: #fff; box-shadow: 0 8px 24px rgba(45,154,92,0.4); }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(45,154,92,0.5); }
+    .btn-hero-ghost { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.15) !important; }
+    .btn-hero-ghost:hover { background: rgba(255,255,255,0.14); }
+    .hero-trust { font-size: 13px; color: rgba(255,255,255,0.35); }
+    .hero-trust strong { color: rgba(255,255,255,0.6); }
+
+    /* QUICK FEATURES */
+    .quick-features {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+      background: var(--border); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .quick-feat {
+      background: var(--white); padding: 28px 24px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .quick-feat-icon { font-size: 28px; }
+    .quick-feat h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+    .quick-feat p  { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    /* SECTIONS */
+    section { padding: 96px 48px; }
+    .section-label { font-size: 12px; font-weight: 700; color: var(--brand-mid); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 12px; }
+    .section-title { font-family: var(--display); font-size: clamp(28px, 4vw, 44px); font-weight: 900; color: var(--text); line-height: 1.15; margin-bottom: 16px; }
+    .section-sub { font-size: 16px; color: var(--muted); max-width: 520px; line-height: 1.7; }
+    .center { text-align: center; }
+    .center .section-sub { margin: 0 auto; }
+
+    /* APP PREVIEW */
+    .preview-section { background: var(--white); }
+    .preview-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .preview-screen {
+      background: linear-gradient(135deg, #061008, #0d2e1a);
+      border-radius: 20px; padding: 20px; box-shadow: var(--shadow-lg);
+      aspect-ratio: 4/3; display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+    }
+    .preview-topbar { display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .preview-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .preview-sidebar-mini { display: flex; gap: 8px; flex: 1; overflow: hidden; }
+    .preview-sb { width: 48px; background: rgba(255,255,255,0.04); border-radius: 10px; display: flex; flex-direction: column; align-items: center; padding: 8px 0; gap: 10px; }
+    .preview-sb-dot { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,0.07); }
+    .preview-sb-dot.active { background: rgba(45,154,92,0.4); }
+    .preview-content { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .preview-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+    .preview-kpi { background: linear-gradient(135deg,rgba(29,92,56,0.8),rgba(45,154,92,0.5)); border-radius: 8px; padding: 8px 10px; }
+    .preview-kpi-val { font-size: 13px; font-weight: 800; color: #fff; }
+    .preview-kpi-lbl { font-size: 9px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing:.05em; }
+    .preview-table { flex: 1; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 5px; }
+    .preview-row { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 6px; background: rgba(255,255,255,0.03); }
+    .preview-avatar { width: 20px; height: 20px; border-radius: 50%; background: rgba(45,154,92,0.4); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; }
+    .preview-line { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; }
+    .preview-badge-mini { height: 14px; width: 40px; border-radius: 99px; background: rgba(34,197,94,0.2); }
+
+    /* FEATURES GRID */
+    .features-grid { max-width: 1100px; margin: 0 auto; }
+    .features-top { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; margin-bottom: 56px; }
+    .feat-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+    .feat-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: box-shadow .2s, transform .2s; }
+    .feat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+    .feat-card-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--brand-light); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; }
+    .feat-card h4 { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .feat-card p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* COMPARE */
+    .compare-section { background: var(--white); }
+    .compare-inner { max-width: 780px; margin: 0 auto; }
+    .compare-table { width: 100%; border-collapse: collapse; margin-top: 40px; }
+    .compare-table th { padding: 14px 20px; font-size: 13px; font-weight: 700; text-align: left; }
+    .compare-table th:first-child { width: 46%; }
+    .compare-table th:not(:first-child) { text-align: center; }
+    .compare-table td { padding: 13px 20px; font-size: 14px; border-top: 1px solid var(--border); }
+    .compare-table td:not(:first-child) { text-align: center; font-size: 18px; }
+    .compare-table tr:hover td { background: #fafaf7; }
+    .col-moga { background: linear-gradient(135deg, var(--brand), var(--brand-mid)); color: #fff; border-radius: 12px 12px 0 0; }
+    .col-moga th { color: #fff; }
+
+    /* PRICING */
+    .pricing-section { background: var(--bg); }
+    .pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; max-width: 960px; margin: 56px auto 0; }
+    .price-card { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; position: relative; transition: box-shadow .2s, transform .2s; }
+    .price-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); }
+    .price-card.popular { border-color: var(--brand); border-width: 2px; box-shadow: 0 0 0 4px rgba(10,46,28,0.06); }
+    .popular-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,var(--brand),var(--brand-mid)); color: #fff; font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 99px; white-space: nowrap; letter-spacing: .05em; }
+    .price-name { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+    .price-amount { font-family: var(--display); font-size: 38px; font-weight: 900; color: var(--text); line-height: 1; margin-bottom: 4px; }
+    .price-amount span { font-size: 18px; font-weight: 600; color: var(--muted); }
+    .price-period { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .price-features { list-style: none; display: flex; flex-direction: column; gap: 11px; margin-bottom: 28px; }
+    .price-features li { font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 10px; }
+    .price-features li::before { content: '✓'; display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: var(--brand-light); color: var(--brand-mid); font-size: 11px; font-weight: 800; align-items: center; justify-content: center; flex-shrink: 0; }
+    .price-features li.off { color: var(--muted); }
+    .price-features li.off::before { content: '–'; background: #f1f5f9; color: #94a3b8; }
+    .price-btn { width: 100%; padding: 12px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: var(--font); cursor: pointer; text-decoration: none; display: block; text-align: center; transition: all .15s; }
+    .price-btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .price-btn-outline:hover { border-color: var(--brand); color: var(--brand); }
+    .price-btn-solid { background: linear-gradient(135deg, var(--brand), var(--brand-mid)); border: none; color: #fff; box-shadow: 0 6px 20px rgba(10,46,28,0.25); }
+    .price-btn-solid:hover { opacity: .88; transform: translateY(-1px); }
+    .price-note { text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted); }
+
+    /* HOW */
+    .how-section { background: var(--white); }
+    .how-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 40px; max-width: 860px; margin: 56px auto 0; }
+    .how-step { text-align: center; }
+    .how-num { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-mid)); color: #fff; font-family: var(--display); font-size: 22px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 24px rgba(10,46,28,0.2); }
+    .how-step h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .how-step p  { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .how-connector { display: none; }
+
+    /* FINAL CTA */
+    .final-cta {
+      background: linear-gradient(135deg, #061008, #0d2e1a);
+      padding: 96px 48px; text-align: center;
+    }
+    .final-cta h2 { font-family: var(--display); font-size: clamp(28px,4vw,48px); font-weight: 900; color: #fff; margin-bottom: 16px; }
+    .final-cta p  { font-size: 16px; color: rgba(255,255,255,0.5); margin-bottom: 40px; }
+
+    /* FOOTER */
+    footer { background: #030d06; padding: 36px 48px; display: flex; align-items: center; justify-content: space-between; }
+    .footer-logo img { height: 28px; filter: brightness(0) invert(1); opacity: .5; }
+    .footer-text { font-size: 13px; color: rgba(255,255,255,0.25); }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero { padding: 70px 24px 60px; }
+      section { padding: 64px 24px; }
+      .quick-features { grid-template-columns: repeat(2,1fr); }
+      .preview-inner, .features-top { grid-template-columns: 1fr; gap: 40px; }
+      .feat-cards { grid-template-columns: repeat(2,1fr); }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+      .how-steps { grid-template-columns: 1fr; gap: 32px; }
+      footer { flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <img src="logo.png" alt="MOGA"/>
+  </div>
+  <div class="nav-links">
+    <a href="#funciones">Funciones</a>
+    <a href="#precios">Precios</a>
+    <a href="#como-funciona">Cómo funciona</a>
+  </div>
+  <div class="nav-cta">
+    <a href="index.html" class="btn-ghost">Ingresar</a>
+    <a href="#precios" class="btn-primary">Ver planes →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">🐾 Software veterinario chileno</div>
+  <h1>Tu clínica veterinaria,<br/><span>digitalizada al 100%.</span></h1>
+  <p>Fichas médicas, vacunas, peluquería y pagos — todo en un solo sistema. Sin instalaciones, desde cualquier dispositivo.</p>
+  <div class="hero-btns">
+    <a href="#precios" class="btn-hero btn-hero-primary">Empezar ahora →</a>
+    <a href="index.html" class="btn-hero btn-hero-ghost">Ver demo en vivo</a>
+  </div>
+  <div class="hero-trust"><strong>+20 clínicas</strong> ya gestionan sus pacientes con MOGA · <strong>Sin tarjeta de crédito</strong></div>
+</section>
+
+<!-- QUICK FEATURES -->
+<div class="quick-features">
+  <div class="quick-feat">
+    <div class="quick-feat-icon">📋</div>
+    <h4>Fichas médicas completas</h4>
+    <p>Historial clínico, diagnósticos y tratamientos por paciente.</p>
+  </div>
+  <div class="quick-feat">
+    <div class="quick-feat-icon">💉</div>
+    <h4>Alertas de vacunación</h4>
+    <p>Control automático de vencimientos con semáforo de estado.</p>
+  </div>
+  <div class="quick-feat">
+    <div class="quick-feat-icon">✂️</div>
+    <h4>Agenda de peluquería</h4>
+    <p>Calendario visual de citas con estados en tiempo real.</p>
+  </div>
+  <div class="quick-feat">
+    <div class="quick-feat-icon">💳</div>
+    <h4>Gestión de pagos</h4>
+    <p>Registro de cobros por consulta, cirugía, procedimiento y más.</p>
+  </div>
+</div>
+
+<!-- APP PREVIEW -->
+<section class="preview-section">
+  <div class="preview-inner">
+    <div>
+      <div class="section-label">Panel de control</div>
+      <h2 class="section-title">Todo lo que necesitas en una sola pantalla</h2>
+      <p class="section-sub">Dashboard en tiempo real con métricas clave, listado de pacientes, citas del día y alertas de vacunas por vencer.</p>
+      <br/>
+      <a href="index.html" class="btn-primary" style="display:inline-block;padding:12px 28px;font-size:15px;">Explorar demo →</a>
+    </div>
+    <div class="preview-screen">
+      <div class="preview-topbar">
+        <div class="preview-dot" style="background:#ef4444"></div>
+        <div class="preview-dot" style="background:#f59e0b"></div>
+        <div class="preview-dot" style="background:#22c55e"></div>
+        <div style="flex:1;height:8px;background:rgba(255,255,255,0.04);border-radius:4px;margin-left:6px;"></div>
+      </div>
+      <div class="preview-sidebar-mini">
+        <div class="preview-sb">
+          <div class="preview-sb-dot active"></div>
+          <div class="preview-sb-dot"></div>
+          <div class="preview-sb-dot"></div>
+          <div class="preview-sb-dot"></div>
+          <div class="preview-sb-dot"></div>
+        </div>
+        <div class="preview-content">
+          <div class="preview-kpis">
+            <div class="preview-kpi"><div class="preview-kpi-val">24</div><div class="preview-kpi-lbl">Pacientes</div></div>
+            <div class="preview-kpi"><div class="preview-kpi-val">$380K</div><div class="preview-kpi-lbl">Ingresos</div></div>
+            <div class="preview-kpi"><div class="preview-kpi-val">3</div><div class="preview-kpi-lbl">Vacunas</div></div>
+          </div>
+          <div class="preview-table">
+            <div class="preview-row"><div class="preview-avatar">🐕</div><div class="preview-line"></div><div class="preview-badge-mini"></div></div>
+            <div class="preview-row"><div class="preview-avatar">🐈</div><div class="preview-line" style="width:55%"></div><div class="preview-badge-mini" style="background:rgba(245,158,11,0.2)"></div></div>
+            <div class="preview-row"><div class="preview-avatar">🐕</div><div class="preview-line" style="width:70%"></div><div class="preview-badge-mini"></div></div>
+            <div class="preview-row"><div class="preview-avatar">🐈</div><div class="preview-line" style="width:40%"></div><div class="preview-badge-mini" style="background:rgba(239,68,68,0.2)"></div></div>
+            <div class="preview-row"><div class="preview-avatar">🐕</div><div class="preview-line"></div><div class="preview-badge-mini"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="funciones">
+  <div class="features-grid">
+    <div class="features-top">
+      <div>
+        <div class="section-label">Funcionalidades</div>
+        <h2 class="section-title">Todo lo que tu clínica necesita para operar</h2>
+      </div>
+      <p class="section-sub" style="padding-top:16px">Diseñado específicamente para veterinarias chilenas. Sin funciones innecesarias, sin complicaciones.</p>
+    </div>
+    <div class="feat-cards">
+      <div class="feat-card">
+        <div class="feat-card-icon">📁</div>
+        <h4>Fichas por mascota</h4>
+        <p>Historial médico completo: diagnósticos, tratamientos, peso, temperatura y próxima visita.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">💉</div>
+        <h4>Control de vacunas</h4>
+        <p>Semáforo automático (al día, próxima, vencida) con número de lote y veterinario responsable.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">✂️</div>
+        <h4>Agenda de peluquería</h4>
+        <p>Calendario mensual con citas confirmadas, pendientes y completadas. Vista lista o calendario.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">👥</div>
+        <h4>Portal de clientes</h4>
+        <p>Cada dueño ve el historial de sus mascotas, vacunas y puede reservar citas de peluquería.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">💳</div>
+        <h4>Pagos y finanzas</h4>
+        <p>Registro de cobros por categoría: consulta, urgencia, cirugía, procedimiento y peluquería.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">🔐</div>
+        <h4>Roles de acceso</h4>
+        <p>Admin, veterinario y cliente. Cada uno ve solo lo que necesita ver.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="compare-section">
+  <div class="compare-inner">
+    <div class="center">
+      <div class="section-label">Comparación</div>
+      <h2 class="section-title">MOGA vs. cuaderno / Excel</h2>
+      <p class="section-sub">El salto que tu clínica necesita para ser profesional.</p>
+    </div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-moga">MOGA Vet</th>
+          <th>Cuaderno/Excel</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Historial médico por mascota</td><td>✅</td><td>❌</td></tr>
+        <tr><td>Alertas de vacunas vencidas</td><td>✅</td><td>❌</td></tr>
+        <tr><td>Agenda de peluquería</td><td>✅</td><td>❌</td></tr>
+        <tr><td>Portal para dueños de mascotas</td><td>✅</td><td>❌</td></tr>
+        <tr><td>Respaldo en la nube</td><td>✅</td><td>❌</td></tr>
+        <tr><td>Acceso desde cualquier dispositivo</td><td>✅</td><td>⚠️ Limitado</td></tr>
+        <tr><td>Registro de pagos</td><td>✅</td><td>⚠️ Manual</td></tr>
+        <tr><td>Costo de implementación</td><td>✅ Desde $0</td><td>💸 Tiempo</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="precios">
+  <div class="center">
+    <div class="section-label">Planes</div>
+    <h2 class="section-title">Elige el plan para tu clínica</h2>
+    <p class="section-sub">Sin contratos. Cancela cuando quieras. Primer mes gratis en todos los planes.</p>
+  </div>
+  <div class="pricing-grid">
+
+    <div class="price-card">
+      <div class="price-name">Básico</div>
+      <div class="price-amount">$0</div>
+      <div class="price-period">Para siempre</div>
+      <ul class="price-features">
+        <li>Hasta 10 mascotas</li>
+        <li>Fichas médicas</li>
+        <li>Control de vacunas</li>
+        <li class="off">Peluquería</li>
+        <li class="off">Portal de clientes</li>
+        <li class="off">Soporte prioritario</li>
+      </ul>
+      <a href="index.html" class="price-btn price-btn-outline">Comenzar gratis</a>
+    </div>
+
+    <div class="price-card popular">
+      <div class="popular-badge">⭐ MÁS POPULAR</div>
+      <div class="price-name">Clínica Pro</div>
+      <div class="price-amount">$29.990 <span>/ mes</span></div>
+      <div class="price-period">Primer mes gratis</div>
+      <ul class="price-features">
+        <li>Mascotas ilimitadas</li>
+        <li>Fichas médicas completas</li>
+        <li>Control de vacunas</li>
+        <li>Agenda de peluquería</li>
+        <li>Portal para dueños</li>
+        <li>Soporte por WhatsApp</li>
+      </ul>
+      <a href="index.html" class="price-btn price-btn-solid">Empezar ahora →</a>
+    </div>
+
+    <div class="price-card">
+      <div class="price-name">Multi-sede</div>
+      <div class="price-amount">$59.990 <span>/ mes</span></div>
+      <div class="price-period">Primer mes gratis</div>
+      <ul class="price-features">
+        <li>Todo lo de Clínica Pro</li>
+        <li>Hasta 5 veterinarios</li>
+        <li>Múltiples sucursales</li>
+        <li>Reportes avanzados</li>
+        <li>Onboarding personalizado</li>
+        <li>Soporte prioritario 24/7</li>
+      </ul>
+      <a href="index.html" class="price-btn price-btn-outline">Contactar →</a>
+    </div>
+
+  </div>
+  <p class="price-note">¿Tienes dudas? Escríbenos por WhatsApp y te ayudamos a elegir el plan ideal.</p>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="como-funciona">
+  <div class="center">
+    <div class="section-label">Proceso</div>
+    <h2 class="section-title">Listo en menos de 5 minutos</h2>
+    <p class="section-sub">Sin instalaciones, sin configuraciones complejas. Solo crear tu cuenta y empezar.</p>
+  </div>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <h4>Crea tu cuenta</h4>
+      <p>Elige tu plan y registra tu clínica. Sin tarjeta de crédito para comenzar.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <h4>Agrega tus pacientes</h4>
+      <p>Carga tus mascotas y dueños. Puedes importar o cargar de a uno.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <h4>Opera desde el día 1</h4>
+      <p>Registra consultas, vacunas y citas. Tu clínica, digitalizada al instante.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <h2>¿Listo para digitalizar tu clínica?</h2>
+  <p>Únete a las clínicas que ya dan el salto con MOGA Vet.</p>
+  <div class="hero-btns">
+    <a href="#precios" class="btn-hero btn-hero-primary">Ver planes →</a>
+    <a href="index.html" class="btn-hero btn-hero-ghost">Ver demo en vivo</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo"><img src="logo.png" alt="MOGA"/></div>
+  <div class="footer-text">© 2026 MOGA Vet · Software veterinario chileno</div>
+</footer>
+
+</body>
+</html>

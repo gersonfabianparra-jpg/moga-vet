@@ -1,0 +1,131 @@
+import { useRef, useState } from "react";
+import { useApp } from "../../context/AppContext.jsx";
+import T from "../../styles/tokens.js";
+import { fmtDate, fmtCLP, spIcon, PAY_METHODS, PAY_CATS } from "../../styles/helpers.js";
+import PageTitle  from "../../components/layout/PageTitle.jsx";
+import { TableWrap, TR, TD } from "../../components/layout/Table.jsx";
+import KpiCard from "../../components/layout/KpiCard.jsx";
+import Btn    from "../../components/ui/Btn.jsx";
+import Input  from "../../components/ui/Input.jsx";
+import Select from "../../components/ui/Select.jsx";
+import Modal  from "../../components/ui/Modal.jsx";
+import CatBadge from "../../components/ui/badges/CatBadge.jsx";
+
+const TODAY = new Date().toISOString().slice(0, 10);
+const EMPTY = { concept:"", petId:"", clientId:"", date:TODAY, amount:"", category:"Consulta", status:"pendiente", method:"" };
+
+const Dot = ({ color }) => <span style={{ display:"inline-block", width:7, height:7, borderRadius:"50%", background:color, flexShrink:0, marginTop:1 }}/>;
+
+export default function PaymentsView() {
+  const { payments, pets, users, addPayment, markPaid } = useApp();
+  const [catF, setCatF]   = useState("");
+  const [stF, setStF]     = useState("");
+  const [modal, setModal] = useState(false);
+  const [form, setForm]   = useState(EMPTY);
+  const selRefs           = useRef({});
+
+  const clients    = users.filter((u) => u.role === "client");
+  const filtered   = payments.filter((p) => (!catF || p.category === catF) && (!stF || p.status === stF)).sort((a, b) => b.date.localeCompare(a.date));
+  const totalPaid  = payments.filter((p) => p.status === "pagado").reduce((s, p) => s + p.amount, 0);
+  const totalPend  = payments.filter((p) => p.status === "pendiente").reduce((s, p) => s + p.amount, 0);
+  const total      = payments.reduce((s, p) => s + p.amount, 0);
+
+  const save = async () => {
+    if (!form.concept || !form.amount) return;
+    await addPayment({ ...form, petId:+form.petId||null, clientId:+form.clientId||null, amount:+form.amount });
+    setModal(false);
+    setForm(EMPTY);
+  };
+
+  return (
+    <div style={{ padding:"0 36px 36px" }}>
+      <PageTitle icon="💳" title="Historial de pagos" sub={`${payments.length} transacciones registradas`} action={<Btn v="accent" onClick={() => setModal(true)}>+ Registrar pago</Btn>}/>
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:22 }}>
+        <KpiCard label="Total facturado"   value={fmtCLP(total)}      icon="🧾" gradient="linear-gradient(135deg,#1e3a5f,#2563eb)"           delay="2"/>
+        <KpiCard label="Ingresos recibidos" value={fmtCLP(totalPaid)} icon="✅" gradient={`linear-gradient(135deg,${T.brand},${T.brandMid})`} delay="3"/>
+        <KpiCard label="Pendiente de cobro" value={fmtCLP(totalPend)} icon="⏳" gradient={`linear-gradient(135deg,#78350f,${T.gold})`}        delay="4"/>
+      </div>
+
+      <div style={{ display:"flex", gap:10, marginBottom:18 }}>
+        <select value={catF} onChange={(e) => setCatF(e.target.value)} className="moga-input" style={{ padding:"9px 12px", border:`1.5px solid ${T.border}`, borderRadius:10, fontSize:14, color:T.text, background:T.panel, fontFamily:T.font }}>
+          <option value="">Todas las categorías</option>
+          {PAY_CATS.map((c) => <option key={c}>{c}</option>)}
+        </select>
+        <select value={stF} onChange={(e) => setStF(e.target.value)} className="moga-input" style={{ padding:"9px 12px", border:`1.5px solid ${T.border}`, borderRadius:10, fontSize:14, color:T.text, background:T.panel, fontFamily:T.font }}>
+          <option value="">Todos los estados</option>
+          <option value="pagado">Pagado</option>
+          <option value="pendiente">Pendiente</option>
+        </select>
+      </div>
+
+      <TableWrap heads={["Concepto","Mascota","Cliente","Categoría","Fecha","Monto","Método","Estado",""]} empty={filtered.length === 0 ? "Sin resultados." : undefined}>
+        {filtered.map((p) => {
+          const pet    = pets.find((pt) => pt.id === p.petId);
+          const client = users.find((u) => u.id === p.clientId);
+          return (
+            <TR key={p.id}>
+              <TD bold><div style={{ maxWidth:190, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.concept}</div></TD>
+              <TD>{pet ? `${spIcon(pet.species)} ${pet.name}` : "—"}</TD>
+              <TD muted>{client?.name || "—"}</TD>
+              <TD><CatBadge cat={p.category}/></TD>
+              <TD>{fmtDate(p.date)}</TD>
+              <TD><span style={{ fontWeight:700, color:p.status==="pagado"?T.greenText:T.amberText }}>{fmtCLP(p.amount)}</span></TD>
+              <TD muted>{p.method || "—"}</TD>
+              <TD>
+                <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:20, background:p.status==="pagado"?T.green:T.amber, color:p.status==="pagado"?T.greenText:T.amberText, fontSize:12, fontWeight:600 }}>
+                  <Dot color={p.status==="pagado"?"#22c55e":"#f59e0b"}/>{p.status==="pagado"?"Pagado":"Pendiente"}
+                </span>
+              </TD>
+              <TD>
+                {p.status === "pendiente" && (
+                  <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                    <select ref={(el) => selRefs.current[p.id]=el} style={{ padding:"4px 8px", border:`1px solid ${T.border}`, borderRadius:6, fontSize:12, fontFamily:T.font, outline:"none" }}>
+                      {PAY_METHODS.map((m) => <option key={m}>{m}</option>)}
+                    </select>
+                    <Btn v="sm_green" onClick={() => markPaid(p.id, selRefs.current[p.id]?.value || "Efectivo")}>✓ Cobrar</Btn>
+                  </div>
+                )}
+              </TD>
+            </TR>
+          );
+        })}
+      </TableWrap>
+
+      {modal && (
+        <Modal title="Registrar pago" onClose={() => setModal(false)}>
+          <Input label="Concepto *" value={form.concept} onChange={(e) => setForm({...form, concept:e.target.value})} placeholder="Ej: Consulta veterinaria Luna"/>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 16px" }}>
+            <Select label="Cliente" value={form.clientId} onChange={(e) => setForm({...form, clientId:e.target.value, petId:""})}>
+              <option value="">Seleccionar...</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+            <Select label="Mascota" value={form.petId} onChange={(e) => setForm({...form, petId:e.target.value})}>
+              <option value="">Seleccionar...</option>
+              {pets.filter((p) => !form.clientId || p.ownerId === +form.clientId).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </Select>
+            <Select label="Categoría" value={form.category} onChange={(e) => setForm({...form, category:e.target.value})}>
+              {PAY_CATS.map((c) => <option key={c}>{c}</option>)}
+            </Select>
+            <Input label="Fecha" type="date" value={form.date} onChange={(e) => setForm({...form, date:e.target.value})}/>
+            <Input label="Monto (CLP) *" type="number" value={form.amount} onChange={(e) => setForm({...form, amount:e.target.value})} placeholder="25000"/>
+            <Select label="Estado" value={form.status} onChange={(e) => setForm({...form, status:e.target.value})}>
+              <option value="pendiente">Pendiente</option>
+              <option value="pagado">Pagado</option>
+            </Select>
+          </div>
+          {form.status === "pagado" && (
+            <Select label="Método de pago" value={form.method} onChange={(e) => setForm({...form, method:e.target.value})}>
+              <option value="">Seleccionar...</option>
+              {PAY_METHODS.map((m) => <option key={m}>{m}</option>)}
+            </Select>
+          )}
+          <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+            <Btn v="ghost" onClick={() => setModal(false)}>Cancelar</Btn>
+            <Btn v="accent" onClick={save}>Registrar pago</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
