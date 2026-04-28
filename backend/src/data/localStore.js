@@ -36,6 +36,16 @@ let vaccines = [
   { id:7, petId:4, name:"Antirrábica",     dateApplied:"2025-11-20", nextDue:"2026-11-20", vet:"Dra. María González", lot:"VR2025-G07" },
   { id:8, petId:4, name:"Sétuple canina",  dateApplied:"2025-11-20", nextDue:"2026-11-20", vet:"Dra. María González", lot:"SC2025-H08" },
 ];
+let appointments = [
+  { id:1, petId:1, clientId:4, staffId:2, date:"2026-04-28", time:"09:00", duration:30, type:"consulta",   status:"confirmada", notes:"Control rutinario anual" },
+  { id:2, petId:3, clientId:5, staffId:3, date:"2026-04-28", time:"11:00", duration:30, type:"control",    status:"pendiente",  notes:"" },
+  { id:3, petId:2, clientId:4, staffId:2, date:"2026-04-28", time:"14:30", duration:45, type:"peluqueria", status:"confirmada", notes:"Corte y baño completo" },
+  { id:4, petId:4, clientId:5, staffId:2, date:"2026-04-29", time:"10:00", duration:30, type:"vacuna",     status:"confirmada", notes:"Antirrábica anual" },
+  { id:5, petId:1, clientId:4, staffId:3, date:"2026-04-29", time:"15:00", duration:30, type:"consulta",   status:"pendiente",  notes:"Revisión post-tratamiento" },
+  { id:6, petId:3, clientId:5, staffId:2, date:"2026-04-30", time:"09:30", duration:60, type:"urgencia",   status:"completada", notes:"Ingesta de objeto extraño" },
+  { id:7, petId:2, clientId:4, staffId:3, date:"2026-05-01", time:"11:00", duration:30, type:"control",    status:"confirmada", notes:"" },
+  { id:8, petId:4, clientId:5, staffId:2, date:"2026-05-02", time:"16:00", duration:30, type:"consulta",   status:"pendiente",  notes:"Revisión dermatológica" },
+];
 let payments = [
   { id:1, concept:"Consulta — Control rutinario Luna",      petId:1, clientId:4, date:"2024-01-15", amount:25000,  category:"Consulta",      status:"pagado",    method:"Débito"       },
   { id:2, concept:"Urgencia — Otitis externa Luna",         petId:1, clientId:4, date:"2024-07-20", amount:45000,  category:"Urgencia",      status:"pagado",    method:"Efectivo"     },
@@ -96,6 +106,22 @@ export const store = {
     findAll:     ()      => [...vaccines],
     findByPetId: (petId) => vaccines.filter((v) => v.petId === petId),
     create:      (v)     => { const rec = { ...v, id: nextId(vaccines) }; vaccines.push(rec); return rec; },
+  },
+  appointments: {
+    findAll:       ()         => [...appointments].sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)),
+    findByClientId:(clientId) => appointments.filter((a) => a.clientId === clientId).sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)),
+    create: (a) => { const rec = { ...a, id: nextId(appointments) }; appointments.push(rec); return rec; },
+    update: (id, fields) => {
+      const i = appointments.findIndex((a) => a.id === id);
+      if (i === -1) throw new Error("No encontrado");
+      appointments[i] = { ...appointments[i], ...fields };
+      return { ...appointments[i] };
+    },
+    remove: (id) => {
+      const i = appointments.findIndex((a) => a.id === id);
+      if (i === -1) throw new Error("No encontrado");
+      appointments.splice(i, 1);
+    },
   },
   payments: {
     findAll:       ()         => [...payments].sort((a,b) => b.date.localeCompare(a.date)),

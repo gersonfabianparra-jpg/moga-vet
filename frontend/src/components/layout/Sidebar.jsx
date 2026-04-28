@@ -8,7 +8,8 @@ const NAV = [
   { id:"grooming",  icon:"✂️", label:"Peluquería" },
   { id:"vaccines",  icon:"💉", label:"Vacunas" },
   { id:"payments",  icon:"💳", label:"Pagos" },
-  { id:"users",     icon:"👥", label:"Clientes" },
+  { id:"appointments", icon:"🗓", label:"Agenda" },
+  { id:"users",        icon:"👥", label:"Clientes" },
 ];
 
 export default function Sidebar({ user, activeTab, onTab, onLogout, badges = {} }) {

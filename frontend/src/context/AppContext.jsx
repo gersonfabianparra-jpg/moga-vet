@@ -4,13 +4,14 @@ import * as recordsService   from "../services/records.service.js";
 import * as groomingService  from "../services/grooming.service.js";
 import * as vaccinesService  from "../services/vaccines.service.js";
 import * as paymentsService  from "../services/payments.service.js";
-import * as usersService from "../services/users.service.js";
+import * as usersService        from "../services/users.service.js";
+import * as appointmentsService from "../services/appointments.service.js";
 
 const AppContext = createContext(null);
 
 const initialState = {
   currentUser: JSON.parse(localStorage.getItem("moga_user") || "null"),
-  users: [], pets: [], records: [], grooming: [], vaccines: [], payments: [],
+  users: [], pets: [], records: [], grooming: [], vaccines: [], payments: [], appointments: [],
   loading: false,
 };
 
@@ -32,6 +33,9 @@ function reducer(state, action) {
       return { ...state, grooming: state.grooming.map((g) => g.id === action.payload.id ? action.payload : g) };
     case "UPDATE_PAYMENT":
       return { ...state, payments: state.payments.map((p) => p.id === action.payload.id ? action.payload : p) };
+    case "ADD_APPOINTMENT":    return { ...state, appointments: [...state.appointments, action.payload] };
+    case "UPDATE_APPOINTMENT": return { ...state, appointments: state.appointments.map((a) => a.id === action.payload.id ? action.payload : a) };
+    case "REMOVE_APPOINTMENT": return { ...state, appointments: state.appointments.filter((a) => a.id !== action.payload) };
     default:               return state;
   }
 }
@@ -47,15 +51,16 @@ export function AppProvider({ children }) {
   const loadAll = async () => {
     dispatch({ type: "SET_LOADING", payload: true });
     try {
-      const [users, pets, records, grooming, vaccines, payments] = await Promise.all([
+      const [users, pets, records, grooming, vaccines, payments, appointments] = await Promise.all([
         usersService.getUsers(),
         petsService.getPets(),
         recordsService.getRecords(),
         groomingService.getGrooming(),
         vaccinesService.getVaccines(),
         paymentsService.getPayments(),
+        appointmentsService.getAppointments(),
       ]);
-      dispatch({ type: "SET_DATA", payload: { users, pets, records, grooming, vaccines, payments } });
+      dispatch({ type: "SET_DATA", payload: { users, pets, records, grooming, vaccines, payments, appointments } });
     } catch (err) {
       console.error("Error cargando datos:", err);
       dispatch({ type: "SET_LOADING", payload: false });
@@ -102,6 +107,21 @@ export function AppProvider({ children }) {
     const data = await paymentsService.markPaid(id, method);
     dispatch({ type: "UPDATE_PAYMENT", payload: data });
   };
+  const addAppointment = async (appt) => {
+    const data = await appointmentsService.createAppointment(appt);
+    dispatch({ type: "ADD_APPOINTMENT", payload: data });
+    return data;
+  };
+  const updateAppointment = async (id, fields) => {
+    const data = await appointmentsService.updateAppointment(id, fields);
+    dispatch({ type: "UPDATE_APPOINTMENT", payload: data });
+    return data;
+  };
+  const removeAppointment = async (id) => {
+    await appointmentsService.removeAppointment(id);
+    dispatch({ type: "REMOVE_APPOINTMENT", payload: id });
+  };
+
   const addUser = async (u) => {
     const data = await usersService.createUser(u);
     dispatch({ type: "ADD_USER", payload: data });
@@ -122,6 +142,7 @@ export function AppProvider({ children }) {
       login, logout,
       addPet, addRecord, addGrooming, updateGroomingStatus,
       addVaccine, addPayment, markPaid, addUser, updateUser, removeUser,
+      addAppointment, updateAppointment, removeAppointment,
     }}>
       {children}
     </AppContext.Provider>

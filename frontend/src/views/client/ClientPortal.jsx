@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../../context/AppContext.jsx";
 import T from "../../styles/tokens.js";
-import { fmtDate, fmtCLP, spIcon, vaxStatus, SERVICES } from "../../styles/helpers.js";
+import { fmtDate, fmtCLP, spIcon, vaxStatus } from "../../styles/helpers.js";
 import { TableWrap, TR, TD } from "../../components/layout/Table.jsx";
 import KpiCard    from "../../components/layout/KpiCard.jsx";
 import Btn        from "../../components/ui/Btn.jsx";
@@ -14,22 +14,46 @@ import TypeBadge   from "../../components/ui/badges/TypeBadge.jsx";
 
 const Dot = ({ color }) => <span style={{ display:"inline-block", width:7, height:7, borderRadius:"50%", background:color, flexShrink:0, marginTop:1 }}/>;
 
+const APPT_TYPES = [
+  { value: "consulta",   label: "🩺 Consulta médica" },
+  { value: "control",    label: "📋 Control / seguimiento" },
+  { value: "vacuna",     label: "💉 Vacunación" },
+  { value: "peluqueria", label: "✂️ Peluquería" },
+  { value: "otro",       label: "📌 Otro" },
+];
+
 export default function ClientPortal() {
-  const { currentUser, pets, records, grooming, vaccines, payments, logout, addGrooming } = useApp();
+  const { currentUser, pets, records, grooming, vaccines, payments, appointments, logout, addAppointment } = useApp();
   const [tab, setTab]         = useState("pets");
   const [selPet, setSelPet]   = useState(null);
   const [bookModal, setBookModal] = useState(false);
   const [booked, setBooked]   = useState(false);
-  const [form, setForm]       = useState({ petId: pets[0]?.id || "", date:"", time:"10:00", service:SERVICES[0], notes:"" });
+  const [saving, setSaving]   = useState(false);
+  const [form, setForm]       = useState({ petId: pets[0]?.id || "", date:"", time:"10:00", type:"consulta", notes:"" });
 
   const myVaxAlert = vaccines.filter((v) => vaxStatus(v.nextDue).key !== "green");
   const myPayPend  = payments.filter((p) => p.status === "pendiente");
+  const myAppts    = appointments.filter((a) => a.clientId === currentUser.id).sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  const upcomingAppts = myAppts.filter((a) => a.date >= new Date().toISOString().slice(0,10) && a.status !== "cancelada");
 
   const book = async () => {
-    if (!form.petId || !form.date) return;
-    await addGrooming({ ...form, petId:+form.petId, status:"pendiente", price:15000 });
-    setBooked(true);
-    setTimeout(() => { setBooked(false); setBookModal(false); }, 2500);
+    if (!form.petId || !form.date || saving) return;
+    setSaving(true);
+    try {
+      await addAppointment({
+        petId: +form.petId,
+        clientId: currentUser.id,
+        staffId: null,
+        date: form.date,
+        time: form.time,
+        duration: 30,
+        type: form.type,
+        status: "pendiente",
+        notes: form.notes,
+      });
+      setBooked(true);
+      setTimeout(() => { setBooked(false); setBookModal(false); setForm({ petId: pets[0]?.id || "", date:"", time:"10:00", type:"consulta", notes:"" }); }, 2500);
+    } finally { setSaving(false); }
   };
 
   return (
@@ -57,7 +81,7 @@ export default function ClientPortal() {
             <div style={{ fontSize:26, fontWeight:900, color:"#fff", fontFamily:T.font, lineHeight:1 }}>{currentUser.name}</div>
             <div style={{ fontSize:13, color:"rgba(255,255,255,0.6)", marginTop:6 }}>RUT: {currentUser.rut} · {currentUser.phone}</div>
           </div>
-          <Btn v="accent" onClick={() => setBookModal(true)}>✂️ Agendar peluquería</Btn>
+          <Btn v="accent" onClick={() => setBookModal(true)}>🗓 Agendar cita</Btn>
         </div>
 
         {/* Alertas */}
@@ -78,7 +102,7 @@ export default function ClientPortal() {
 
         {/* Tabs */}
         <div style={{ display:"flex", gap:4, marginBottom:24, background:T.panel, borderRadius:12, padding:4, boxShadow:T.sm, width:"fit-content" }}>
-          {[ ["pets","🐾 Mascotas"],["grooming","✂️ Citas"],["payments","💳 Pagos"],["vaccines","💉 Vacunas"] ].map(([id,lbl]) => (
+          {[ ["pets","🐾 Mascotas"],["agenda","🗓 Agenda"],["grooming","✂️ Peluquería"],["payments","💳 Pagos"],["vaccines","💉 Vacunas"] ].map(([id,lbl]) => (
             <button key={id} onClick={() => { setTab(id); setSelPet(null); }} style={{ padding:"9px 18px", border:"none", cursor:"pointer", fontSize:13, fontWeight:tab===id?700:500, borderRadius:9, fontFamily:T.font, background:tab===id?T.brand:"transparent", color:tab===id?"#fff":T.textMuted, transition:"all 0.15s" }}>
               {lbl}
             </button>
@@ -153,6 +177,50 @@ export default function ClientPortal() {
         )}
 
         {/* Citas peluquería */}
+        {/* Agenda */}
+        {tab === "agenda" && (
+          <div style={{ display:"grid", gap:12 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+              <div style={{ fontSize:16, fontWeight:800, color:T.text }}>Mis próximas citas</div>
+              <Btn v="accent" style={{ padding:"8px 18px" }} onClick={() => setBookModal(true)}>+ Agendar cita</Btn>
+            </div>
+            {upcomingAppts.length === 0
+              ? <div style={{ textAlign:"center", padding:60, color:T.textMuted, background:T.panel, borderRadius:16 }}>
+                  <div style={{ fontSize:52, marginBottom:12 }}>🗓</div>
+                  <div style={{ marginBottom:16 }}>No tienes citas próximas.</div>
+                  <Btn v="accent" onClick={() => setBookModal(true)}>Agendar mi primera cita</Btn>
+                </div>
+              : myAppts.map((a) => {
+                  const pet = pets.find((p) => p.id === a.petId);
+                  const typeLabel = { consulta:"🩺 Consulta", control:"📋 Control", vacuna:"💉 Vacuna", peluqueria:"✂️ Peluquería", urgencia:"🚨 Urgencia", otro:"📌 Otro" };
+                  const statusColor = { pendiente:{ bg:T.amber, color:T.amberText }, confirmada:{ bg:T.green, color:T.greenText }, completada:{ bg:T.blue, color:T.blueText }, cancelada:{ bg:T.red, color:T.redText } };
+                  const sc = statusColor[a.status] || statusColor.pendiente;
+                  const isPast = a.date < new Date().toISOString().slice(0,10);
+                  return (
+                    <div key={a.id} style={{ background:T.panel, borderRadius:14, boxShadow:T.sm, border:`1px solid ${T.border}`, padding:"18px 22px", display:"flex", justifyContent:"space-between", alignItems:"center", opacity: isPast ? 0.6 : 1 }}>
+                      <div style={{ display:"flex", gap:14, alignItems:"center" }}>
+                        <div style={{ width:50, height:50, borderRadius:14, background:`linear-gradient(135deg,${T.brand},${T.brandMid})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24 }}>{spIcon(pet?.species)}</div>
+                        <div>
+                          <div style={{ fontSize:15, fontWeight:800, color:T.text }}>{pet?.name}</div>
+                          <div style={{ fontSize:13, color:T.textMuted, marginTop:2 }}>{typeLabel[a.type] || a.type}</div>
+                          {a.notes && <div style={{ fontSize:12, color:T.textMuted, marginTop:4 }}>📝 {a.notes}</div>}
+                        </div>
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontWeight:700, marginBottom:6 }}>📅 {fmtDate(a.date)} · {a.time}</div>
+                        <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:20, background:sc.bg, color:sc.color, fontSize:12, fontWeight:600 }}>
+                          {a.status.charAt(0).toUpperCase() + a.status.slice(1)}
+                        </span>
+                        {a.status === "pendiente" && <div style={{ fontSize:11, color:T.textMuted, marginTop:6 }}>El equipo MOGA confirmará tu cita pronto.</div>}
+                        {a.status === "confirmada" && <div style={{ fontSize:11, color:T.greenText, marginTop:6, fontWeight:600 }}>✓ Cita confirmada</div>}
+                      </div>
+                    </div>
+                  );
+                })
+            }
+          </div>
+        )}
+
         {tab === "grooming" && (
           grooming.length === 0
             ? <div style={{ textAlign:"center", padding:60, color:T.textMuted, background:T.panel, borderRadius:16 }}>
@@ -248,31 +316,34 @@ export default function ClientPortal() {
         )}
       </div>
 
-      {/* Modal agendar peluquería */}
+      {/* Modal agendar cita */}
       {bookModal && (
-        <Modal title="Solicitar cita de peluquería" sub="Tu solicitud será confirmada por el equipo MOGA" onClose={() => setBookModal(false)}>
+        <Modal title="Solicitar cita" sub="Tu solicitud será confirmada por el equipo MOGA" onClose={() => setBookModal(false)}>
           {booked ? (
             <div style={{ textAlign:"center", padding:"24px 0" }}>
               <div style={{ width:64, height:64, borderRadius:"50%", background:T.green, display:"flex", alignItems:"center", justifyContent:"center", fontSize:28, margin:"0 auto 16px" }}>✅</div>
               <div style={{ fontSize:20, fontWeight:800, color:T.greenText, marginBottom:6 }}>¡Cita solicitada!</div>
-              <div style={{ fontSize:14, color:T.textMuted }}>El equipo MOGA te contactará pronto para confirmar.</div>
+              <div style={{ fontSize:14, color:T.textMuted }}>El equipo MOGA confirmará tu cita pronto. La verás en la pestaña Agenda.</div>
             </div>
           ) : (
             <>
+              <Select label="Tipo de cita *" value={form.type} onChange={(e) => setForm({...form, type:e.target.value})}>
+                {APPT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </Select>
               <Select label="Mascota *" value={form.petId} onChange={(e) => setForm({...form, petId:e.target.value})}>
+                <option value="">— Seleccionar —</option>
                 {pets.map((p) => <option key={p.id} value={p.id}>{spIcon(p.species)} {p.name}</option>)}
               </Select>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 16px" }}>
                 <Input label="Fecha deseada *" type="date" value={form.date} onChange={(e) => setForm({...form, date:e.target.value})}/>
                 <Input label="Hora preferida"  type="time" value={form.time} onChange={(e) => setForm({...form, time:e.target.value})}/>
               </div>
-              <Select label="Servicio" value={form.service} onChange={(e) => setForm({...form, service:e.target.value})}>
-                {SERVICES.map((s) => <option key={s}>{s}</option>)}
-              </Select>
-              <Input label="Notas o instrucciones" value={form.notes} onChange={(e) => setForm({...form, notes:e.target.value})} placeholder="Ej: alérgico a ciertos shampoos..."/>
+              <Input label="Notas o instrucciones" value={form.notes} onChange={(e) => setForm({...form, notes:e.target.value})} placeholder="Ej: síntomas, alergias, instrucciones especiales…"/>
               <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
                 <Btn v="ghost" onClick={() => setBookModal(false)}>Cancelar</Btn>
-                <Btn v="accent" onClick={book}>Solicitar cita →</Btn>
+                <Btn v="accent" onClick={book} disabled={saving || !form.petId || !form.date}>
+                  {saving ? "Enviando…" : "Solicitar cita →"}
+                </Btn>
               </div>
             </>
           )}

@@ -8,15 +8,17 @@ import RecordsView   from "./RecordsView.jsx";
 import GroomingView  from "./GroomingView.jsx";
 import VaccinesView  from "./VaccinesView.jsx";
 import PaymentsView  from "./PaymentsView.jsx";
-import UsersView     from "./UsersView.jsx";
+import UsersView        from "./UsersView.jsx";
+import AppointmentsView from "./AppointmentsView.jsx";
 import T from "../../styles/tokens.js";
 
 export default function AdminDashboard() {
-  const { currentUser, logout, vaccines, payments } = useApp();
+  const { currentUser, logout, vaccines, payments, appointments } = useApp();
   const [tab, setTab] = useState("overview");
 
-  const urgentVax  = vaccines.filter((v) => vaxStatus(v.nextDue).key !== "green").length;
-  const pendingPay = payments.filter((p) => p.status === "pendiente").length;
+  const urgentVax     = vaccines.filter((v) => vaxStatus(v.nextDue).key !== "green").length;
+  const pendingPay    = payments.filter((p) => p.status === "pendiente").length;
+  const pendingAppts  = appointments.filter((a) => a.status === "pendiente").length;
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:T.appBg, fontFamily:T.font }}>
@@ -25,7 +27,7 @@ export default function AdminDashboard() {
         activeTab={tab}
         onTab={setTab}
         onLogout={logout}
-        badges={{ vaccines: urgentVax, payments: pendingPay }}
+        badges={{ vaccines: urgentVax, payments: pendingPay, appointments: pendingAppts }}
       />
       <div style={{ flex:1, overflow:"auto" }}>
         {tab === "overview"  && <OverviewView  />}
@@ -34,7 +36,8 @@ export default function AdminDashboard() {
         {tab === "grooming"  && <GroomingView  />}
         {tab === "vaccines"  && <VaccinesView  />}
         {tab === "payments"  && <PaymentsView  />}
-        {tab === "users"     && <UsersView     />}
+        {tab === "appointments" && <AppointmentsView />}
+        {tab === "users"        && <UsersView      />}
       </div>
     </div>
   );

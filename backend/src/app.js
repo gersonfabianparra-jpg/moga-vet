@@ -8,7 +8,8 @@ import recordsRoutes from "./routes/records.routes.js";
 import groomingRoutes from "./routes/grooming.routes.js";
 import vaccinesRoutes from "./routes/vaccines.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
-import usersRoutes from "./routes/users.routes.js";
+import usersRoutes        from "./routes/users.routes.js";
+import appointmentsRoutes from "./routes/appointments.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
@@ -23,7 +24,8 @@ app.use("/api/records", recordsRoutes);
 app.use("/api/grooming", groomingRoutes);
 app.use("/api/vaccines", vaccinesRoutes);
 app.use("/api/payments", paymentsRoutes);
-app.use("/api/users", usersRoutes);
+app.use("/api/users",        usersRoutes);
+app.use("/api/appointments", appointmentsRoutes);
 
 app.use(errorHandler);
 
