@@ -24,6 +24,11 @@ const Record = {
     if (error) throw error;
     return data;
   },
+  update: async (id, fields) => {
+    const { data, error } = await supabase.from("records").update(fields).eq("id", id).select().single();
+    if (error) throw error;
+    return data;
+  },
 };
 
 export default Record;

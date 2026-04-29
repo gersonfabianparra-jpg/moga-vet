@@ -1,4 +1,5 @@
 import { useApp } from "../../context/AppContext.jsx";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import T from "../../styles/tokens.js";
 import { fmtCLP, fmtDate, spIcon, vaxStatus } from "../../styles/helpers.js";
 import KpiCard    from "../../components/layout/KpiCard.jsx";
@@ -7,6 +8,7 @@ import VaxBadge   from "../../components/ui/badges/VaxBadge.jsx";
 
 export default function OverviewView() {
   const { pets, records, grooming, users, payments, vaccines, currentUser } = useApp();
+  const { isMobile } = useBreakpoint();
   const clients   = users.filter((u) => u.role === "client");
   const today     = new Date().toISOString().slice(0, 10);
   const upcoming  = [...grooming]
@@ -22,7 +24,7 @@ export default function OverviewView() {
   const firstName = currentUser?.name?.split(" ")[0] ?? "";
 
   return (
-    <div style={{ padding: "0 36px 40px", maxWidth: 1200 }}>
+    <div style={{ padding: isMobile ? "0 14px 32px" : "0 36px 40px", maxWidth: 1200 }}>
 
       {/* Hero bienvenida */}
       <div className="fade-up" style={{

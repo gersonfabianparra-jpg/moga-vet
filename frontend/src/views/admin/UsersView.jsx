@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useApp } from "../../context/AppContext.jsx";
 import { useNotify } from "../../context/NotificationContext.jsx";
+import { validateRut, formatRut } from "../../utils/rut.js";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import T from "../../styles/tokens.js";
 import PageTitle from "../../components/layout/PageTitle.jsx";
 import Btn    from "../../components/ui/Btn.jsx";
@@ -19,9 +21,11 @@ const ROLE_COLOR = { admin: T.brand, vet: "#7c3aed", client: "#0284c7" };
 
 export default function UsersView() {
   const { users, pets, currentUser, addUser, updateUser, removeUser, addPet } = useApp();
+  const { isMobile } = useBreakpoint();
   const notify = useNotify();
 
   const [clientSearch, setClientSearch] = useState("");
+  const [clientFilter, setClientFilter] = useState("todos"); // todos | con_mascotas | sin_mascotas
   const [modalClient, setModalClient] = useState(false);
   const [modalStaff,  setModalStaff]  = useState(false);
   const [modalEdit,   setModalEdit]   = useState(null);  // user object
@@ -31,6 +35,7 @@ export default function UsersView() {
   const [formStaff,  setFormStaff]  = useState(EMPTY_STAFF);
   const [formEdit,   setFormEdit]   = useState({});
   const [loading,    setLoading]    = useState(false);
+  const [rutErr,     setRutErr]     = useState("");
 
   // Mascota inline al crear cliente
   const [inlinePet, setInlinePet] = useState(false);
@@ -40,19 +45,25 @@ export default function UsersView() {
 
   const [clientView, setClientView] = useState("list");
 
-  const staff = users.filter((u) => u.role !== "client");
+  const staff = users.filter((u) => u.role !== "client" && !u.isRoot);
   const clients = users
     .filter((u) => u.role === "client")
     .filter((u) => {
       const q = clientSearch.toLowerCase();
-      return !q || [u.name, u.email, u.phone, u.rut].join(" ").toLowerCase().includes(q);
-    });
+      if (q && ![u.name, u.email, u.phone, u.rut].join(" ").toLowerCase().includes(q)) return false;
+      const myPets = pets.filter((p) => p.ownerId === u.id);
+      if (clientFilter === "con_mascotas"  && myPets.length === 0) return false;
+      if (clientFilter === "sin_mascotas"  && myPets.length  >  0) return false;
+      return true;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
 
   const saveClient = async () => {
     if (!formClient.name || !formClient.email || !formClient.rut) return;
-    setLoading(true);
+    if (!validateRut(formClient.rut)) { setRutErr("RUT inválido. Verifica el dígito verificador."); return; }
+    setRutErr(""); setLoading(true);
     try {
-      const nuevoCliente = await addUser(formClient);
+      const nuevoCliente = await addUser({ ...formClient, rut: formatRut(formClient.rut) });
       if (inlinePet && fPet.name) {
         await addPet({
           ...fPet,
@@ -117,7 +128,7 @@ export default function UsersView() {
   const canDelete = (u) => !u.isRoot && u.id !== currentUser?.id && (isRoot || currentUser?.role === "admin");
 
   return (
-    <div style={{ padding:"0 36px 36px" }}>
+    <div style={{ padding: isMobile ? "0 14px 32px" : "0 36px 36px" }}>
       <PageTitle
         icon="👥"
         title="Clientes & Personal"
@@ -161,8 +172,27 @@ export default function UsersView() {
       </div>
 
       {/* Clientes — cabecera con búsqueda y toggle */}
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
         <Label>Clientes registrados</Label>
+        {[
+          ["todos",         "Todos"],
+          ["con_mascotas",  "🐾 Con mascotas"],
+          ["sin_mascotas",  "Sin mascotas"],
+        ].map(([val, lbl]) => {
+          const active = clientFilter === val;
+          return (
+            <button key={val} onClick={() => setClientFilter(val)}
+              style={{ padding:"5px 13px", borderRadius:20, border:`1.5px solid ${active ? T.brand : T.border}`,
+                background: active ? T.brand : T.panel, color: active ? "#fff" : T.textMuted,
+                cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:T.font,
+                transition:"all 0.15s" }}>
+              {lbl}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
+        <Label style={{ display:"none" }}></Label>
         <div style={{ position:"relative", flex:"1 1 260px", maxWidth:360 }}>
           <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", fontSize:15, color:T.textMuted, pointerEvents:"none" }}>🔍</span>
           <input
@@ -192,7 +222,8 @@ export default function UsersView() {
 
       {/* Vista lista clientes */}
       {clientView === "list" && (
-        <div style={{ background:T.panel, borderRadius:16, boxShadow:T.md, border:`1px solid ${T.border}`, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ overflowX:"auto", borderRadius:16, boxShadow:T.md, border:`1px solid ${T.border}`, marginBottom:14 }}>
+        <div style={{ background:T.panel, minWidth: isMobile ? 560 : "auto", overflow:"hidden" }}>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 180px 140px 120px 80px",
             background:T.appBg, borderBottom:`2px solid ${T.border}`, padding:"10px 20px" }}>
             {["Nombre","Correo","Teléfono","Mascotas","Acciones"].map((h) => (
@@ -236,6 +267,7 @@ export default function UsersView() {
               </div>
             );
           })}
+        </div>
         </div>
       )}
 
@@ -283,9 +315,22 @@ export default function UsersView() {
 
       {/* Modal: nuevo cliente */}
       {modalClient && (
-        <Modal title="Registrar nuevo cliente" onClose={() => { setModalClient(false); setInlinePet(false); setFPet(EMPTY_PET_FORM); }}>
+        <Modal title="Registrar nuevo cliente" onClose={() => { setModalClient(false); setInlinePet(false); setFPet(EMPTY_PET_FORM); setRutErr(""); setFormClient(EMPTY_CLIENT); }}>
           <Input label="Nombre completo *" value={formClient.name}     onChange={(e) => setFormClient({...formClient, name:e.target.value})}     placeholder="María Torres"/>
-          <Input label="RUT *"             value={formClient.rut}      onChange={(e) => setFormClient({...formClient, rut:e.target.value})}      placeholder="12.345.678-9"/>
+          <div>
+            <Input label="RUT *"
+              value={formClient.rut}
+              onChange={(e) => { setFormClient({...formClient, rut: e.target.value}); setRutErr(""); }}
+              onBlur={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  if (!validateRut(val)) setRutErr("RUT inválido. Verifica el dígito verificador.");
+                  else { setRutErr(""); setFormClient((f) => ({ ...f, rut: formatRut(val) })); }
+                }
+              }}
+              placeholder="12.345.678-9"/>
+            {rutErr && <div style={{ fontSize:12, color:"#dc2626", marginTop:-8, marginBottom:8, fontFamily:"inherit" }}>⚠ {rutErr}</div>}
+          </div>
           <Input label="Correo *" type="email" value={formClient.email} onChange={(e) => setFormClient({...formClient, email:e.target.value})}   placeholder="cliente@email.cl"/>
           <Input label="Teléfono"          value={formClient.phone}    onChange={(e) => setFormClient({...formClient, phone:e.target.value})}    placeholder="+56 9 1234 5678"/>
           <Input label="Contraseña inicial" value={formClient.password} onChange={(e) => setFormClient({...formClient, password:e.target.value})}/>

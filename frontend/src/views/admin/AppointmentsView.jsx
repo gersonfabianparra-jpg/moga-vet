@@ -330,6 +330,68 @@ export default function AppointmentsView() {
         </div>
       )}
 
+      {/* Panel de bloqueos rápidos */}
+      {isAdmin && blockMode && (
+        <div style={{ background: T.panel, borderRadius: 14, border: `1.5px solid #FCD34D`, padding: "16px 20px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#92400E", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            🔒 Bloqueos rápidos para hoy ({todayISO})
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+            {[
+              { label: "🌅 Mañana", start: "09:00", end: "13:00" },
+              { label: "☀️ Tarde",  start: "13:00", end: "18:00" },
+              { label: "📅 Día completo", start: "09:00", end: "19:00" },
+              { label: "🍽 Almuerzo", start: "13:00", end: "14:00" },
+            ].map((q) => (
+              <button key={q.label}
+                onClick={() => { setBlockForm({ date: todayISO, startTime: q.start, endTime: q.end, reason: "" }); setBlockModal(true); }}
+                style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid #FCD34D`, background: "#FEF3C7",
+                  color: "#92400E", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: T.font }}>
+                {q.label}
+              </button>
+            ))}
+            <button
+              onClick={() => { setBlockForm({ date: todayISO, startTime: "", endTime: "", reason: "" }); setBlockModal(true); }}
+              style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid ${T.brand}`, background: T.brandXLight,
+                color: T.brand, cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: T.font }}>
+              ✏️ Personalizado
+            </button>
+          </div>
+
+          {/* Lista de bloqueos activos esta semana */}
+          {blockedSlots.filter((b) => b.date >= toISO(weekStart) && b.date <= toISO(addDays(weekStart, 6))).length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+                Bloqueos activos esta semana
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {blockedSlots
+                  .filter((b) => b.date >= toISO(weekStart) && b.date <= toISO(addDays(weekStart, 6)))
+                  .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+                  .map((b) => (
+                    <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10,
+                      background: "#FEF3C7", borderRadius: 8, padding: "7px 12px", fontSize: 12 }}>
+                      <span style={{ fontWeight: 700, color: "#92400E" }}>
+                        {new Date(b.date + "T12:00:00").toLocaleDateString("es-CL", { weekday: "short", day: "numeric", month: "short" })}
+                      </span>
+                      <span style={{ color: "#92400E" }}>{b.startTime} – {b.endTime}</span>
+                      {b.reason && <span style={{ color: T.textMuted, fontStyle: "italic" }}>· {b.reason}</span>}
+                      <button onClick={() => handleRemoveBlock(b.id)}
+                        style={{ marginLeft: "auto", padding: "2px 8px", borderRadius: 6, border: "none",
+                          background: "#FEE2E2", color: "#DC2626", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
+                        ✕ Quitar
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          {blockedSlots.filter((b) => b.date >= toISO(weekStart) && b.date <= toISO(addDays(weekStart, 6))).length === 0 && (
+            <div style={{ fontSize: 12, color: T.textMuted, fontStyle: "italic" }}>Sin bloqueos esta semana.</div>
+          )}
+        </div>
+      )}
+
       {/* Leyenda */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
         {Object.entries(TYPE_CFG).map(([k, v]) => (

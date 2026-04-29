@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import { useApp } from "../../context/AppContext.jsx";
 import T from "../../styles/tokens.js";
 import { fmtDate, spIcon, vaxStatus, VACCINES_LIST } from "../../styles/helpers.js";
@@ -15,6 +16,7 @@ const EMPTY = { petId:"", name:"", dateApplied:TODAY, nextDue:"", vet:"", lot:""
 
 export default function VaccinesView() {
   const { vaccines, pets, users, addVaccine } = useApp();
+  const { isMobile } = useBreakpoint();
   const [petFilter, setPetFilter] = useState("");
   const [modal, setModal]         = useState(false);
   const [form, setForm]           = useState(EMPTY);
@@ -36,7 +38,7 @@ export default function VaccinesView() {
   };
 
   return (
-    <div style={{ padding:"0 36px 36px" }}>
+    <div style={{ padding: isMobile ? "0 14px 32px" : "0 36px 36px" }}>
       <PageTitle icon="💉" title="Vacunas & Recordatorios"
         sub={`${vaccines.length} registros · ${overdue.length} vencidas · ${upcoming.length} próximas`}
         action={<Btn v="accent" onClick={() => setModal(true)}>+ Registrar vacuna</Btn>}/>

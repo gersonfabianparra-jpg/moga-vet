@@ -1,12 +1,14 @@
 import { createContext, useContext, useReducer, useEffect } from "react";
 import * as petsService          from "../services/pets.service.js";
 import * as recordsService       from "../services/records.service.js";
+
 import * as groomingService      from "../services/grooming.service.js";
 import * as vaccinesService      from "../services/vaccines.service.js";
 import * as paymentsService      from "../services/payments.service.js";
 import * as usersService         from "../services/users.service.js";
 import * as appointmentsService  from "../services/appointments.service.js";
 import * as blockedSlotsService  from "../services/blockedSlots.service.js";
+import * as settingsService      from "../services/settings.service.js";
 
 const AppContext = createContext(null);
 
@@ -30,6 +32,7 @@ const initialState = {
   currentUser: JSON.parse(localStorage.getItem("moga_user") || "null"),
   users: [], pets: [], records: [], grooming: [], vaccines: [], payments: [],
   appointments: [], blockedSlots: [],
+  settings: null,
   loading: false,
   recordsLoaded: false,
 };
@@ -38,8 +41,10 @@ function reducer(state, action) {
   switch (action.type) {
     case "SET_USER":    return { ...state, currentUser: action.payload };
     case "LOGOUT":      return { ...initialState, currentUser: null };
-    case "SET_DATA":    return { ...state, ...action.payload, loading: false };
-    case "SET_RECORDS": return { ...state, records: action.payload, recordsLoaded: true };
+    case "SET_DATA":     return { ...state, ...action.payload, loading: false };
+    case "SET_SETTINGS": return { ...state, settings: action.payload };
+    case "SET_RECORDS":    return { ...state, records: action.payload, recordsLoaded: true };
+    case "UPDATE_RECORD":  return { ...state, records: state.records.map((r) => r.id === action.payload.id ? action.payload : r) };
     case "SET_LOADING": return { ...state, loading: action.payload };
 
     case "ADD_PET":     return { ...state, pets: [...state.pets, action.payload] };
@@ -92,7 +97,7 @@ export function AppProvider({ children }) {
 
     // ── Carga inicial sin records (más rápido) ──
     try {
-      const [users, pets, vaccines, grooming, payments, appointments, blockedSlots] = await Promise.all([
+      const [users, pets, vaccines, grooming, payments, appointments, blockedSlots, settingsData] = await Promise.all([
         usersService.getUsers(),
         petsService.getPets(),
         vaccinesService.getVaccines(),
@@ -100,9 +105,10 @@ export function AppProvider({ children }) {
         paymentsService.getPayments(),
         appointmentsService.getAppointments().catch(() => []),
         blockedSlotsService.getBlockedSlots().catch(() => []),
+        settingsService.getSettings().catch(() => null),
       ]);
       const fastData = { users, pets, vaccines, grooming, payments, appointments, blockedSlots };
-      dispatch({ type: "SET_DATA", payload: { ...fastData, records: [], recordsLoaded: false } });
+      dispatch({ type: "SET_DATA", payload: { ...fastData, records: [], recordsLoaded: false, settings: settingsData } });
       writeCache(fastData);
 
       // ── Fichas en background (no bloquean la UI) ──
@@ -136,6 +142,11 @@ export function AppProvider({ children }) {
   const addRecord = async (rec) => {
     const data = await recordsService.createRecord(rec);
     dispatch({ type: "ADD_RECORD", payload: data });
+  };
+  const updateRecord = async (id, fields) => {
+    const data = await recordsService.updateRecord(id, fields);
+    dispatch({ type: "UPDATE_RECORD", payload: data });
+    return data;
   };
   const addGrooming = async (appt) => {
     const data = await groomingService.createGrooming(appt);
@@ -194,6 +205,11 @@ export function AppProvider({ children }) {
     await usersService.removeUser(id);
     dispatch({ type: "REMOVE_USER", payload: id });
   };
+  const updateSettings = async (fields) => {
+    const data = await settingsService.saveSettings(fields);
+    dispatch({ type: "SET_SETTINGS", payload: data });
+    return data;
+  };
   const addBlockedSlot = async (slot) => {
     const data = await blockedSlotsService.createBlockedSlot(slot);
     dispatch({ type: "ADD_BLOCKED_SLOT", payload: data });
@@ -208,10 +224,10 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       ...state,
       login, logout, loadAll, updateProfile,
-      addPet, addRecord, addGrooming, updateGroomingStatus,
+      addPet, addRecord, updateRecord, addGrooming, updateGroomingStatus,
       addVaccine, addPayment, markPaid, addUser, updateUser, removeUser,
       addAppointment, updateAppointment, removeAppointment,
-      addBlockedSlot, removeBlockedSlot,
+      addBlockedSlot, removeBlockedSlot, updateSettings,
     }}>
       {children}
     </AppContext.Provider>

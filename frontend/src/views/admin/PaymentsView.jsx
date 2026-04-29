@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import { useApp } from "../../context/AppContext.jsx";
 import T from "../../styles/tokens.js";
 import { fmtDate, fmtCLP, spIcon, PAY_METHODS, PAY_CATS } from "../../styles/helpers.js";
@@ -18,6 +19,7 @@ const Dot = ({ color }) => <span style={{ display:"inline-block", width:7, heigh
 
 export default function PaymentsView() {
   const { payments, pets, users, addPayment, markPaid } = useApp();
+  const { isMobile } = useBreakpoint();
   const [catF, setCatF]   = useState("");
   const [stF, setStF]     = useState("");
   const [modal, setModal] = useState(false);
@@ -38,7 +40,7 @@ export default function PaymentsView() {
   };
 
   return (
-    <div style={{ padding:"0 36px 36px" }}>
+    <div style={{ padding: isMobile ? "0 14px 32px" : "0 36px 36px" }}>
       <PageTitle icon="💳" title="Historial de pagos" sub={`${payments.length} transacciones registradas`} action={<Btn v="accent" onClick={() => setModal(true)}>+ Registrar pago</Btn>}/>
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:22 }}>

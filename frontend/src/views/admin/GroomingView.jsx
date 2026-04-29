@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "../../context/AppContext.jsx";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
+import { getGroomingPhotos, uploadGroomingPhoto, deletePhoto } from "../../services/petPhotos.service.js";
+import { generateGroomingPDF, previewGroomingPDF } from "../../utils/generatePetPDF.js";
 import T from "../../styles/tokens.js";
 import { fmtDate, fmtCLP, spIcon, SERVICES, MONTHS, DAYS_S, calDays } from "../../styles/helpers.js";
 import PageTitle  from "../../components/layout/PageTitle.jsx";
@@ -13,11 +16,124 @@ const NOW = new Date();
 const EMPTY = { petId:"", clientId:"", date:"", time:"09:00", service:SERVICES[0], notes:"", price:18000, status:"pendiente" };
 const ST_COLORS = { confirmada:"#22c55e", pendiente:"#f59e0b", completada:"#94a3b8", cancelada:"#ef4444" };
 
+// ── Sección de fotos por cita de peluquería ──────────────────────────────────
+function GroomingPhotoSection({ grooming, petId }) {
+  const [photos,    setPhotos]    = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [lightbox,  setLightbox]  = useState(null);
+  const [open,      setOpen]      = useState(false);
+  const fileRef = useRef();
+
+  const load = async () => {
+    try {
+      const data = await getGroomingPhotos(grooming.id);
+      setPhotos(data);
+    } catch { setPhotos([]); }
+  };
+
+  useEffect(() => { if (open && photos === null) load(); }, [open]);
+
+  const handleFile = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const f of files) await uploadGroomingPhoto(grooming.id, petId, f);
+      await load();
+    } catch (err) {
+      console.error("Error subiendo foto:", err);
+    } finally { setUploading(false); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Eliminar foto?")) return;
+    await deletePhoto(id);
+    setPhotos((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const cnt = photos?.length ?? 0;
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      {/* Toggle */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center",
+          gap:6, fontSize:12.5, fontWeight:600, color:T.brand, padding:0, fontFamily:T.font }}
+      >
+        <span style={{ fontSize:14 }}>{open ? "▲" : "▼"}</span>
+        {open ? "Ocultar fotos" : `📷 Fotos del servicio${cnt > 0 ? ` (${cnt})` : ""}`}
+      </button>
+
+      {open && (
+        <div style={{ marginTop:10 }}>
+          {/* Grid de fotos */}
+          {photos === null ? (
+            <div style={{ fontSize:12, color:T.textMuted }}>Cargando…</div>
+          ) : photos.length === 0 ? (
+            <div style={{ fontSize:12, color:T.textMuted, fontStyle:"italic", marginBottom:10 }}>
+              Sin fotos adjuntas para este servicio.
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:10 }}>
+              {photos.map((ph) => (
+                <div key={ph.id} style={{ position:"relative" }}>
+                  <img
+                    src={ph.url}
+                    alt={ph.caption || "foto"}
+                    onClick={() => setLightbox(ph.url)}
+                    style={{ width:72, height:72, objectFit:"cover", borderRadius:9, cursor:"pointer",
+                      border:`1.5px solid ${T.border}`, boxShadow:T.sm }}
+                  />
+                  <button
+                    onClick={() => handleDelete(ph.id)}
+                    style={{ position:"absolute", top:-5, right:-5, width:17, height:17,
+                      background:"#ef4444", color:"#fff", border:"none", borderRadius:"50%",
+                      fontSize:10, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+                      lineHeight:1, padding:0 }}
+                  >✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Subir fotos */}
+          <input
+            ref={fileRef} type="file" multiple accept="image/*"
+            capture="environment" onChange={handleFile} style={{ display:"none" }}
+          />
+          <Btn v="sm_green" onClick={() => fileRef.current?.click()} disabled={uploading}>
+            {uploading ? "Subiendo…" : "📷 Agregar foto"}
+          </Btn>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.82)", zIndex:9999,
+            display:"flex", alignItems:"center", justifyContent:"center" }}
+        >
+          <img src={lightbox} alt="foto" style={{ maxWidth:"92vw", maxHeight:"88vh", borderRadius:12 }} />
+          <button
+            onClick={() => setLightbox(null)}
+            style={{ position:"fixed", top:20, right:24, background:"rgba(255,255,255,0.15)",
+              border:"none", color:"#fff", fontSize:22, cursor:"pointer", borderRadius:8, padding:"4px 10px" }}
+          >✕</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GroomingView() {
-  const { grooming, pets, users, addGrooming, updateGroomingStatus } = useApp();
+  const { grooming, pets, users, settings, addGrooming, updateGroomingStatus } = useApp();
+  const { isMobile } = useBreakpoint();
   const [view, setView]       = useState("calendar");
   const [filter, setFilter]   = useState("todas");
   const [modal, setModal]     = useState(false);
+  const [pdfPreview, setPdfPreview] = useState(null);
   const [calYear, setCalYear] = useState(NOW.getFullYear());
   const [calMonth, setCalMonth] = useState(NOW.getMonth());
   const [form, setForm]       = useState(EMPTY);
@@ -41,7 +157,7 @@ export default function GroomingView() {
   };
 
   return (
-    <div style={{ padding:"0 36px 36px" }}>
+    <div style={{ padding: isMobile ? "0 14px 32px" : "0 36px 36px" }}>
       <PageTitle icon="✂️" title="Peluquería" sub="Agenda y gestión de citas" action={
         <div style={{ display:"flex", gap:10 }}>
           <div style={{ display:"flex", border:`1.5px solid ${T.border}`, borderRadius:10, overflow:"hidden", background:T.panel, boxShadow:T.sm }}>
@@ -103,41 +219,77 @@ export default function GroomingView() {
             ))}
           </div>
           <div style={{ display:"grid", gap:12 }}>
-            {display.map((g) => { const pet=pets.find((p)=>p.id===g.petId), client=users.find((u)=>u.id===g.clientId); return (
-              <div key={g.id} style={{ background:T.panel, borderRadius:14, boxShadow:T.sm, border:`1px solid ${T.border}`, padding:"18px 22px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:14, flex:1 }}>
-                  <div style={{ width:52, height:52, borderRadius:14, background:`linear-gradient(135deg,${T.brand},${T.brandMid})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>{spIcon(pet?.species)}</div>
-                  <div>
-                    <div style={{ fontSize:15, fontWeight:800, color:T.text }}>{pet?.name} <span style={{ fontWeight:400, color:T.textMuted, fontSize:14 }}>· {client?.name}</span></div>
-                    <div style={{ fontSize:13, color:T.textMuted, marginTop:2 }}>{g.service}</div>
-                    {g.notes && <div style={{ fontSize:12, color:T.textMuted, fontStyle:"italic", marginTop:3 }}>📝 {g.notes}</div>}
+            {display.map((g) => {
+              const pet    = pets.find((p) => p.id === g.petId);
+              const client = users.find((u) => u.id === g.clientId);
+              return (
+                <div key={g.id} style={{ background:T.panel, borderRadius:14, boxShadow:T.sm, border:`1px solid ${T.border}`, padding:"18px 22px" }}>
+                  <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:16 }}>
+                    {/* Lado izquierdo */}
+                    <div style={{ display:"flex", alignItems:"center", gap:14, flex:1 }}>
+                      <div style={{ width:52, height:52, borderRadius:14, background:`linear-gradient(135deg,${T.brand},${T.brandMid})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>{spIcon(pet?.species)}</div>
+                      <div>
+                        <div style={{ fontSize:15, fontWeight:800, color:T.text }}>{pet?.name} <span style={{ fontWeight:400, color:T.textMuted, fontSize:14 }}>· {client?.name}</span></div>
+                        <div style={{ fontSize:13, color:T.textMuted, marginTop:2 }}>{g.service}</div>
+                        {g.notes && <div style={{ fontSize:12, color:T.textMuted, fontStyle:"italic", marginTop:3 }}>📝 {g.notes}</div>}
+                      </div>
+                    </div>
+                    {/* Lado derecho */}
+                    <div style={{ textAlign:"right", flexShrink:0 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:6 }}>📅 {fmtDate(g.date)} · {g.time}</div>
+                      <div style={{ marginBottom:8 }}><StatusBadge status={g.status}/></div>
+                      <div style={{ fontSize:15, fontWeight:800, color:T.brand }}>{fmtCLP(g.price)}</div>
+                      <div style={{ display:"flex", gap:6, justifyContent:"flex-end", marginTop:6, flexWrap:"wrap" }}>
+                        {g.status === "pendiente"  && <><Btn v="sm_green" onClick={() => updateGroomingStatus(g.id,"confirmada")}>✓ Confirmar</Btn><Btn v="sm_red" onClick={() => updateGroomingStatus(g.id,"cancelada")}>✗</Btn></>}
+                        {g.status === "confirmada" && <Btn v="sm_gray"  onClick={() => updateGroomingStatus(g.id,"completada")}>✓ Completar</Btn>}
+                        <Btn v="ghost" onClick={() => setPdfPreview(previewGroomingPDF({ grooming: g, pet, client, settings: settings || {} }))}
+                          style={{ fontSize:11, padding:"5px 11px" }}>
+                          📄 PDF
+                        </Btn>
+                      </div>
+                    </div>
                   </div>
+                  {/* Sección de fotos */}
+                  {pet?.id && <GroomingPhotoSection grooming={g} petId={pet.id} />}
                 </div>
-                <div style={{ textAlign:"right", flexShrink:0 }}>
-                  <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:6 }}>📅 {fmtDate(g.date)} · {g.time}</div>
-                  <div style={{ marginBottom:8 }}><StatusBadge status={g.status}/></div>
-                  <div style={{ fontSize:15, fontWeight:800, color:T.brand }}>{fmtCLP(g.price)}</div>
-                  <div style={{ display:"flex", gap:6, justifyContent:"flex-end", marginTop:6 }}>
-                    {g.status === "pendiente"   && <><Btn v="sm_green" onClick={() => updateGroomingStatus(g.id,"confirmada")}>✓ Confirmar</Btn><Btn v="sm_red" onClick={() => updateGroomingStatus(g.id,"cancelada")}>✗</Btn></>}
-                    {g.status === "confirmada"  && <Btn v="sm_gray"  onClick={() => updateGroomingStatus(g.id,"completada")}>✓ Completar</Btn>}
-                  </div>
-                </div>
-              </div>
-            );})}
+              );
+            })}
             {display.length === 0 && <div style={{ textAlign:"center", padding:48, color:T.textMuted, fontSize:14, background:T.panel, borderRadius:14 }}>Sin citas en esta categoría.</div>}
           </div>
         </>
+      )}
+
+      {/* Modal previsualización PDF grooming */}
+      {pdfPreview && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.72)", zIndex:400,
+          display:"flex", alignItems:"center", justifyContent:"center" }}
+          onClick={(e) => { if (e.target === e.currentTarget) { URL.revokeObjectURL(pdfPreview.url); setPdfPreview(null); } }}>
+          <div style={{ background:T.panel, borderRadius:16, boxShadow:"0 20px 60px rgba(0,0,0,0.4)",
+            width:"92vw", maxWidth:900, height:"88vh", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"14px 20px", borderBottom:`1px solid ${T.border}`, flexShrink:0 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                📄 {pdfPreview.filename}
+              </div>
+              <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+                <Btn v="accent" onClick={() => pdfPreview.doc.save(pdfPreview.filename)}>⬇ Descargar</Btn>
+                <Btn v="ghost"  onClick={() => { URL.revokeObjectURL(pdfPreview.url); setPdfPreview(null); }}>✕ Cerrar</Btn>
+              </div>
+            </div>
+            <iframe src={pdfPreview.url} style={{ flex:1, width:"100%", border:"none" }} title="Vista previa PDF"/>
+          </div>
+        </div>
       )}
 
       {modal && (
         <Modal title="Agendar cita de peluquería" onClose={() => setModal(false)}>
           <Select label="Cliente *" value={form.clientId} onChange={(e) => setForm({...form, clientId:e.target.value, petId:""})}>
             <option value="">Seleccionar cliente...</option>
-            {clients.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.rut}</option>)}
+            {clients.sort((a,b) => a.name.localeCompare(b.name,"es")).map((c) => <option key={c.id} value={c.id}>{c.name} — {c.rut}</option>)}
           </Select>
           <Select label="Mascota *" value={form.petId} onChange={(e) => setForm({...form, petId:e.target.value})}>
             <option value="">Seleccionar mascota...</option>
-            {pets.filter((p) => !form.clientId || p.ownerId === +form.clientId).map((p) => <option key={p.id} value={p.id}>{p.name} ({p.breed})</option>)}
+            {pets.filter((p) => !form.clientId || p.ownerId === +form.clientId).sort((a,b) => a.name.localeCompare(b.name,"es")).map((p) => <option key={p.id} value={p.id}>{p.name} ({p.breed})</option>)}
           </Select>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 16px" }}>
             <Input label="Fecha *" type="date" value={form.date} onChange={(e) => setForm({...form, date:e.target.value})}/>

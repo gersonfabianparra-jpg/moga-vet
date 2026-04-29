@@ -33,3 +33,12 @@ export const create = async (req, res, next) => {
     next(err);
   }
 };
+
+export const update = async (req, res, next) => {
+  try {
+    const record = await Record.update(Number(req.params.id), req.body);
+    res.json(record);
+  } catch (err) {
+    next(err);
+  }
+};

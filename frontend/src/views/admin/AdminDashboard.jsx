@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useApp } from "../../context/AppContext.jsx";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import { vaxStatus } from "../../styles/helpers.js";
 import Sidebar          from "../../components/layout/Sidebar.jsx";
 import SearchModal      from "../../components/layout/SearchModal.jsx";
@@ -11,6 +12,7 @@ import VaccinesView     from "./VaccinesView.jsx";
 import PaymentsView     from "./PaymentsView.jsx";
 import UsersView        from "./UsersView.jsx";
 import AppointmentsView from "./AppointmentsView.jsx";
+import SettingsView     from "./SettingsView.jsx";
 import Modal  from "../../components/ui/Modal.jsx";
 import Input  from "../../components/ui/Input.jsx";
 import Btn    from "../../components/ui/Btn.jsx";
@@ -68,9 +70,11 @@ function ProfileModal({ onClose }) {
 
 export default function AdminDashboard() {
   const { currentUser, logout, vaccines, payments, appointments } = useApp();
-  const [tab, setTab]         = useState("overview");
-  const [search, setSearch]   = useState(false);
-  const [profile, setProfile] = useState(false);
+  const { isMobile } = useBreakpoint();
+  const [tab, setTab]               = useState("overview");
+  const [search, setSearch]         = useState(false);
+  const [profile, setProfile]       = useState(false);
+  const [sidebarOpen, setSidebar]   = useState(false);
 
   const urgentVax    = vaccines.filter((v) => vaxStatus(v.nextDue).key !== "green").length;
   const pendingPay   = payments.filter((p) => p.status === "pendiente").length;
@@ -98,8 +102,34 @@ export default function AdminDashboard() {
         onSearch={() => setSearch(true)}
         onEditProfile={() => setProfile(true)}
         badges={{ vaccines: urgentVax, payments: pendingPay, appointments: pendingAppts }}
+        isMobile={isMobile}
+        open={sidebarOpen}
+        onClose={() => setSidebar(false)}
       />
-      <div style={{ flex:1, overflow:"auto" }}>
+      <div style={{ flex:1, overflow:"auto", minWidth:0 }}>
+        {/* Barra superior mobile */}
+        {isMobile && (
+          <div style={{
+            display:"flex", alignItems:"center", gap:12,
+            padding:"14px 16px", background:T.sb, borderBottom:"1px solid rgba(255,255,255,0.06)",
+            position:"sticky", top:0, zIndex:100,
+          }}>
+            <button
+              onClick={() => setSidebar(true)}
+              style={{ background:"rgba(255,255,255,0.08)", border:"none", color:"#fff",
+                width:38, height:38, borderRadius:10, fontSize:20, cursor:"pointer",
+                display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
+            >☰</button>
+            <div style={{ fontSize:17, fontWeight:800, color:"#fff", fontFamily:T.font, letterSpacing:"-0.03em" }}>
+              Zo<span style={{ color:"#818CF8" }}>VITA</span>
+            </div>
+            <div style={{ flex:1 }} />
+            <button onClick={() => setSearch(true)}
+              style={{ background:"rgba(255,255,255,0.08)", border:"none", color:"rgba(255,255,255,0.6)",
+                width:38, height:38, borderRadius:10, fontSize:17, cursor:"pointer",
+                display:"flex", alignItems:"center", justifyContent:"center" }}>🔍</button>
+          </div>
+        )}
         {tab === "overview"     && <OverviewView     />}
         {tab === "pets"         && <PetsView         />}
         {tab === "records"      && <RecordsView      />}
@@ -108,6 +138,7 @@ export default function AdminDashboard() {
         {tab === "payments"     && <PaymentsView     />}
         {tab === "appointments" && <AppointmentsView />}
         {tab === "users"        && <UsersView        />}
+        {tab === "settings"     && <SettingsView     />}
       </div>
 
       {profile && <ProfileModal onClose={() => setProfile(false)}/>}
