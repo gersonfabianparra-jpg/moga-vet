@@ -131,6 +131,7 @@ export function AppProvider({ children }) {
   const addPet = async (pet) => {
     const data = await petsService.createPet(pet);
     dispatch({ type: "ADD_PET", payload: data });
+    return data;
   };
   const addRecord = async (rec) => {
     const data = await recordsService.createRecord(rec);
@@ -173,6 +174,7 @@ export function AppProvider({ children }) {
   const addUser = async (u) => {
     const data = await usersService.createUser(u);
     dispatch({ type: "ADD_USER", payload: data });
+    return data;
   };
   const updateUser = async (id, fields) => {
     const data = await usersService.updateUser(id, fields);

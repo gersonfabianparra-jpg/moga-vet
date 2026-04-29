@@ -12,7 +12,8 @@ import Label  from "../../components/ui/Label.jsx";
 import VaxBadge  from "../../components/ui/badges/VaxBadge.jsx";
 import TypeBadge from "../../components/ui/badges/TypeBadge.jsx";
 
-const EMPTY_FORM  = { name:"", species:"Perro", breed:"", age:"", weight:"", color:"", gender:"Hembra", chip:"", ownerId:"" };
+const EMPTY_FORM        = { name:"", species:"Perro", breed:"", age:"", weight:"", color:"", gender:"Hembra", chip:"", ownerId:"" };
+const EMPTY_INLINE_CLIENT = { name:"", rut:"", email:"", phone:"", password:"cliente123" };
 
 // ── Modal de contraseña (pequeño, superpuesto) ────────────────────────────────
 function PwdModal({ onSuccess, onCancel }) {
@@ -295,12 +296,19 @@ function PetDetail({ pet, users, records, vaccines, onBack }) {
                       onMouseEnter={(el) => el.currentTarget.style.boxShadow = T.md}
                       onMouseLeave={(el) => el.currentTarget.style.boxShadow = "none"}>
 
-                      {/* Fecha */}
-                      <div style={{ display:"inline-flex", alignItems:"center", gap:6,
-                        background:tipo.bg, borderRadius:20, padding:"3px 10px", marginBottom:8 }}>
-                        <span style={{ fontSize:11, fontWeight:800, color:tipo.color,
-                          letterSpacing:"0.02em" }}>
-                          {e.label}
+                      {/* Fecha + número de entrada */}
+                      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8, flexWrap:"wrap" }}>
+                        <div style={{ display:"inline-flex", alignItems:"center", gap:6,
+                          background:tipo.bg, borderRadius:20, padding:"3px 10px" }}>
+                          <span style={{ fontSize:11, fontWeight:800, color:tipo.color,
+                            letterSpacing:"0.02em" }}>
+                            {e.label}
+                          </span>
+                        </div>
+                        <span style={{ fontSize:10, fontWeight:700, color:T.textMuted,
+                          background:T.appBg, border:`1px solid ${T.border}`,
+                          borderRadius:20, padding:"2px 8px", letterSpacing:"0.04em" }}>
+                          #{entradas.length - idx}
                         </span>
                       </div>
 
@@ -322,11 +330,16 @@ function PetDetail({ pet, users, records, vaccines, onBack }) {
 
 // ── Vista principal ───────────────────────────────────────────────────────────
 export default function PetsView() {
-  const { pets, users, records, vaccines, addPet } = useApp();
+  const { pets, users, records, vaccines, addPet, addUser } = useApp();
   const [search, setSearch]     = useState("");
-  const [viewMode, setViewMode] = useState("list");          // lista por defecto
+  const [viewMode, setViewMode] = useState("list");
   const [modal, setModal]       = useState(false);
   const [form, setForm]         = useState(EMPTY_FORM);
+
+  // Creación inline de cliente nuevo dentro del modal mascota
+  const [inlineClient, setInlineClient] = useState(false);
+  const [fClient, setFClient]           = useState(EMPTY_INLINE_CLIENT);
+  const [inlineErr, setInlineErr]       = useState("");
 
   // Flujo de selección con contraseña
   const [selected, setSelected]     = useState(null);   // mascota en detalle
@@ -347,10 +360,28 @@ export default function PetsView() {
   };
 
   const save = async () => {
-    if (!form.name || !form.ownerId) return;
-    await addPet({ ...form, age: +form.age, weight: +form.weight, ownerId: +form.ownerId });
+    if (!form.name) return;
+    setInlineErr("");
+    let ownerId = form.ownerId;
+    if (inlineClient) {
+      if (!fClient.name || !fClient.email || !fClient.rut) {
+        setInlineErr("Nombre, RUT y correo son obligatorios.");
+        return;
+      }
+      try {
+        const nuevoCliente = await addUser({ ...fClient, role: "client" });
+        ownerId = nuevoCliente.id;
+      } catch {
+        setInlineErr("Error al crear el cliente. Verifica los datos.");
+        return;
+      }
+    }
+    if (!ownerId) return;
+    await addPet({ ...form, age: +form.age, weight: +form.weight, ownerId: +ownerId });
     setModal(false);
     setForm(EMPTY_FORM);
+    setInlineClient(false);
+    setFClient(EMPTY_INLINE_CLIENT);
   };
 
   // ── Detalle de mascota ──
@@ -469,7 +500,7 @@ export default function PetsView() {
 
       {/* Modal: nueva mascota */}
       {modal && (
-        <Modal title="Registrar nueva mascota" onClose={() => setModal(false)}>
+        <Modal title="Registrar nueva mascota" onClose={() => { setModal(false); setInlineClient(false); setFClient(EMPTY_INLINE_CLIENT); setInlineErr(""); }}>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 16px" }}>
             <Input label="Nombre *"      value={form.name}    onChange={(e) => setForm({...form, name:e.target.value})}    placeholder="Luna"/>
             <Select label="Especie"      value={form.species} onChange={(e) => setForm({...form, species:e.target.value})}>
@@ -484,12 +515,40 @@ export default function PetsView() {
             <Input label="Color"         value={form.color}   onChange={(e) => setForm({...form, color:e.target.value})}   placeholder="Dorado"/>
             <Input label="Microchip"     value={form.chip}    onChange={(e) => setForm({...form, chip:e.target.value})}    placeholder="985141..."/>
           </div>
-          <Select label="Propietario *" value={form.ownerId} onChange={(e) => setForm({...form, ownerId:e.target.value})}>
-            <option value="">Seleccionar cliente...</option>
-            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
+
+          {/* Propietario: seleccionar existente o crear nuevo */}
+          <div style={{ marginBottom:16 }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+              <Label>Propietario *</Label>
+              <button onClick={() => { setInlineClient(!inlineClient); setInlineErr(""); }}
+                style={{ fontSize:12, fontWeight:700, color: inlineClient ? T.redText : T.brand,
+                  background:"none", border:"none", cursor:"pointer", padding:0, fontFamily:T.font }}>
+                {inlineClient ? "✕ Cancelar cliente nuevo" : "+ Crear cliente nuevo"}
+              </button>
+            </div>
+
+            {!inlineClient ? (
+              <Select value={form.ownerId} onChange={(e) => setForm({...form, ownerId:e.target.value})}>
+                <option value="">— Seleccionar cliente —</option>
+                {[...clients].sort((a,b) => a.name.localeCompare(b.name, "es"))
+                  .map((c) => <option key={c.id} value={c.id}>{c.name}{c.rut ? ` · ${c.rut}` : ""}</option>)}
+              </Select>
+            ) : (
+              <div style={{ background:T.appBg, borderRadius:12, padding:"14px 16px", border:`1.5px solid ${T.brand}` }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.brand, marginBottom:10 }}>👤 Nuevo cliente</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 12px" }}>
+                  <Input label="Nombre completo *" value={fClient.name}  onChange={(e) => setFClient({...fClient, name:e.target.value})}  placeholder="María Torres"/>
+                  <Input label="RUT *"             value={fClient.rut}   onChange={(e) => setFClient({...fClient, rut:e.target.value})}   placeholder="12.345.678-9"/>
+                  <Input label="Correo *" type="email" value={fClient.email} onChange={(e) => setFClient({...fClient, email:e.target.value})} placeholder="cliente@email.cl"/>
+                  <Input label="Teléfono"          value={fClient.phone} onChange={(e) => setFClient({...fClient, phone:e.target.value})} placeholder="+56 9 1234 5678"/>
+                </div>
+                {inlineErr && <div style={{ fontSize:12, color:T.redText, marginTop:6 }}>⚠ {inlineErr}</div>}
+              </div>
+            )}
+          </div>
+
           <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
-            <Btn v="ghost" onClick={() => setModal(false)}>Cancelar</Btn>
+            <Btn v="ghost" onClick={() => { setModal(false); setInlineClient(false); setFClient(EMPTY_INLINE_CLIENT); setInlineErr(""); }}>Cancelar</Btn>
             <Btn v="accent" onClick={save}>Guardar mascota</Btn>
           </div>
         </Modal>

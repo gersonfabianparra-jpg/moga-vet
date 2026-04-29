@@ -5,18 +5,20 @@ import T from "../../styles/tokens.js";
 import PageTitle from "../../components/layout/PageTitle.jsx";
 import Btn    from "../../components/ui/Btn.jsx";
 import Input  from "../../components/ui/Input.jsx";
+import Select from "../../components/ui/Select.jsx";
 import Modal  from "../../components/ui/Modal.jsx";
 import Label  from "../../components/ui/Label.jsx";
 import Avatar from "../../components/ui/Avatar.jsx";
 
-const EMPTY_CLIENT = { name:"", email:"", rut:"", phone:"", password:"cliente123", role:"client" };
-const EMPTY_STAFF  = { name:"", email:"", phone:"", password:"", role:"vet", avatar:"" };
+const EMPTY_CLIENT   = { name:"", email:"", rut:"", phone:"", password:"cliente123", role:"client" };
+const EMPTY_STAFF    = { name:"", email:"", phone:"", password:"", role:"vet", avatar:"" };
+const EMPTY_PET_FORM = { name:"", species:"Perro", breed:"", gender:"Hembra", age:"", weight:"" };
 
 const ROLE_LABEL = { admin:"Administrador", vet:"Veterinario/a", client:"Cliente" };
 const ROLE_COLOR = { admin: T.brand, vet: "#7c3aed", client: "#0284c7" };
 
 export default function UsersView() {
-  const { users, pets, currentUser, addUser, updateUser, removeUser } = useApp();
+  const { users, pets, currentUser, addUser, updateUser, removeUser, addPet } = useApp();
   const notify = useNotify();
 
   const [clientSearch, setClientSearch] = useState("");
@@ -29,6 +31,10 @@ export default function UsersView() {
   const [formStaff,  setFormStaff]  = useState(EMPTY_STAFF);
   const [formEdit,   setFormEdit]   = useState({});
   const [loading,    setLoading]    = useState(false);
+
+  // Mascota inline al crear cliente
+  const [inlinePet, setInlinePet] = useState(false);
+  const [fPet,      setFPet]      = useState(EMPTY_PET_FORM);
 
   const isRoot = currentUser?.isRoot;
 
@@ -46,10 +52,20 @@ export default function UsersView() {
     if (!formClient.name || !formClient.email || !formClient.rut) return;
     setLoading(true);
     try {
-      await addUser(formClient);
+      const nuevoCliente = await addUser(formClient);
+      if (inlinePet && fPet.name) {
+        await addPet({
+          ...fPet,
+          age: fPet.age ? +fPet.age : null,
+          weight: fPet.weight ? +fPet.weight : null,
+          ownerId: nuevoCliente.id,
+        });
+      }
       setModalClient(false);
       setFormClient(EMPTY_CLIENT);
-      notify("Cliente registrado correctamente.", "success");
+      setInlinePet(false);
+      setFPet(EMPTY_PET_FORM);
+      notify(inlinePet && fPet.name ? "Cliente y mascota registrados correctamente." : "Cliente registrado correctamente.", "success");
     } catch {
       notify("Error al registrar el cliente.", "error");
     } finally { setLoading(false); }
@@ -267,14 +283,45 @@ export default function UsersView() {
 
       {/* Modal: nuevo cliente */}
       {modalClient && (
-        <Modal title="Registrar nuevo cliente" onClose={() => setModalClient(false)}>
+        <Modal title="Registrar nuevo cliente" onClose={() => { setModalClient(false); setInlinePet(false); setFPet(EMPTY_PET_FORM); }}>
           <Input label="Nombre completo *" value={formClient.name}     onChange={(e) => setFormClient({...formClient, name:e.target.value})}     placeholder="María Torres"/>
           <Input label="RUT *"             value={formClient.rut}      onChange={(e) => setFormClient({...formClient, rut:e.target.value})}      placeholder="12.345.678-9"/>
           <Input label="Correo *" type="email" value={formClient.email} onChange={(e) => setFormClient({...formClient, email:e.target.value})}   placeholder="cliente@email.cl"/>
           <Input label="Teléfono"          value={formClient.phone}    onChange={(e) => setFormClient({...formClient, phone:e.target.value})}    placeholder="+56 9 1234 5678"/>
           <Input label="Contraseña inicial" value={formClient.password} onChange={(e) => setFormClient({...formClient, password:e.target.value})}/>
-          <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
-            <Btn v="ghost" onClick={() => setModalClient(false)}>Cancelar</Btn>
+
+          {/* Mascota opcional inline */}
+          <div style={{ borderTop:`1px solid ${T.border}`, marginTop:8, paddingTop:14 }}>
+            <button onClick={() => setInlinePet(!inlinePet)}
+              style={{ display:"flex", alignItems:"center", gap:8, background:"none", border:"none",
+                cursor:"pointer", padding:0, fontFamily:T.font, fontSize:13, fontWeight:700,
+                color: inlinePet ? T.redText : T.brand }}>
+              <span style={{ fontSize:16 }}>{inlinePet ? "✕" : "🐾"}</span>
+              {inlinePet ? "Quitar mascota" : "Agregar mascota ahora (opcional)"}
+            </button>
+
+            {inlinePet && (
+              <div style={{ background:T.appBg, borderRadius:12, padding:"14px 16px", marginTop:12,
+                border:`1.5px solid ${T.brand}` }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.brand, marginBottom:10 }}>🐾 Mascota</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 12px" }}>
+                  <Input label="Nombre *"   value={fPet.name}    onChange={(e) => setFPet({...fPet, name:e.target.value})}    placeholder="Luna"/>
+                  <Select label="Especie"   value={fPet.species} onChange={(e) => setFPet({...fPet, species:e.target.value})}>
+                    {["Perro","Gato","Conejo","Ave","Otro"].map((s) => <option key={s}>{s}</option>)}
+                  </Select>
+                  <Input label="Raza"       value={fPet.breed}   onChange={(e) => setFPet({...fPet, breed:e.target.value})}   placeholder="Labrador"/>
+                  <Select label="Género"    value={fPet.gender}  onChange={(e) => setFPet({...fPet, gender:e.target.value})}>
+                    <option>Hembra</option><option>Macho</option>
+                  </Select>
+                  <Input label="Edad (años)" type="number" value={fPet.age}    onChange={(e) => setFPet({...fPet, age:e.target.value})}    placeholder="3"/>
+                  <Input label="Peso (kg)"   type="number" step="0.1" value={fPet.weight} onChange={(e) => setFPet({...fPet, weight:e.target.value})} placeholder="12.5"/>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:16 }}>
+            <Btn v="ghost" onClick={() => { setModalClient(false); setInlinePet(false); setFPet(EMPTY_PET_FORM); }}>Cancelar</Btn>
             <Btn v="accent" onClick={saveClient} disabled={loading}>Registrar cliente</Btn>
           </div>
         </Modal>

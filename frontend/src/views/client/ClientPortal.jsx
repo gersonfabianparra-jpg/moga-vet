@@ -23,8 +23,10 @@ const APPT_TYPES = [
   { value: "otro",       label: "📌 Otro" },
 ];
 
+const EMPTY_PET = { name:"", species:"Perro", breed:"", gender:"Hembra", age:"", weight:"" };
+
 export default function ClientPortal() {
-  const { currentUser, pets, records, grooming, vaccines, payments, appointments, logout, addAppointment } = useApp();
+  const { currentUser, pets, records, grooming, vaccines, payments, appointments, logout, addAppointment, addPet } = useApp();
   const [tab, setTab]         = useState("pets");
   const [selPet, setSelPet]   = useState(null);
   const [bookModal, setBookModal] = useState(false);
@@ -32,17 +34,34 @@ export default function ClientPortal() {
   const [saving, setSaving]   = useState(false);
   const [form, setForm]       = useState({ petId: pets[0]?.id || "", date:"", time:"10:00", type:"consulta", notes:"" });
 
+  // Registro de nueva mascota dentro del modal de cita
+  const [newPetMode, setNewPetMode] = useState(false);
+  const [petForm, setPetForm]       = useState(EMPTY_PET);
+  const [petErr, setPetErr]         = useState("");
+
   const myVaxAlert = vaccines.filter((v) => vaxStatus(v.nextDue).key !== "green");
   const myPayPend  = payments.filter((p) => p.status === "pendiente");
   const myAppts    = appointments.filter((a) => a.clientId === currentUser.id).sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
   const upcomingAppts = myAppts.filter((a) => a.date >= new Date().toISOString().slice(0,10) && a.status !== "cancelada");
 
   const book = async () => {
-    if (!form.petId || !form.date || saving) return;
-    setSaving(true);
+    if (!form.date || saving) return;
+    if (newPetMode && !petForm.name) { setPetErr("El nombre de la mascota es obligatorio."); return; }
+    if (!newPetMode && !form.petId)  return;
+    setSaving(true); setPetErr("");
     try {
+      let petId = +form.petId;
+      if (newPetMode) {
+        const nuevaMascota = await addPet({
+          ...petForm,
+          age: petForm.age ? +petForm.age : null,
+          weight: petForm.weight ? +petForm.weight : null,
+          ownerId: currentUser.id,
+        });
+        petId = nuevaMascota.id;
+      }
       await addAppointment({
-        petId: +form.petId,
+        petId,
         clientId: currentUser.id,
         staffId: null,
         date: form.date,
@@ -53,7 +72,11 @@ export default function ClientPortal() {
         notes: form.notes,
       });
       setBooked(true);
-      setTimeout(() => { setBooked(false); setBookModal(false); setForm({ petId: pets[0]?.id || "", date:"", time:"10:00", type:"consulta", notes:"" }); }, 2500);
+      setTimeout(() => {
+        setBooked(false); setBookModal(false);
+        setForm({ petId: pets[0]?.id || "", date:"", time:"10:00", type:"consulta", notes:"" });
+        setNewPetMode(false); setPetForm(EMPTY_PET);
+      }, 2500);
     } finally { setSaving(false); }
   };
 
@@ -318,7 +341,8 @@ export default function ClientPortal() {
 
       {/* Modal agendar cita */}
       {bookModal && (
-        <Modal title="Solicitar cita" sub="Tu solicitud será confirmada por el equipo MOGA" onClose={() => setBookModal(false)}>
+        <Modal title="Solicitar cita" sub="Tu solicitud será confirmada por el equipo MOGA"
+          onClose={() => { setBookModal(false); setNewPetMode(false); setPetForm(EMPTY_PET); setPetErr(""); }}>
           {booked ? (
             <div style={{ textAlign:"center", padding:"24px 0" }}>
               <div style={{ width:64, height:64, borderRadius:"50%", background:T.green, display:"flex", alignItems:"center", justifyContent:"center", fontSize:28, margin:"0 auto 16px" }}>✅</div>
@@ -330,18 +354,66 @@ export default function ClientPortal() {
               <Select label="Tipo de cita *" value={form.type} onChange={(e) => setForm({...form, type:e.target.value})}>
                 {APPT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </Select>
-              <Select label="Mascota *" value={form.petId} onChange={(e) => setForm({...form, petId:e.target.value})}>
-                <option value="">— Seleccionar —</option>
-                {pets.map((p) => <option key={p.id} value={p.id}>{spIcon(p.species)} {p.name}</option>)}
-              </Select>
+
+              {/* Mascota: existente o nueva */}
+              <div style={{ marginBottom:16 }}>
+                <div style={{ display:"flex", gap:4, background:T.appBg, borderRadius:10, padding:4, marginBottom:10 }}>
+                  <button onClick={() => { setNewPetMode(false); setPetErr(""); }}
+                    style={{ flex:1, padding:"7px 0", border:"none", cursor:"pointer", borderRadius:8,
+                      fontSize:12, fontWeight:700, fontFamily:T.font,
+                      background: !newPetMode ? T.brand : "transparent",
+                      color: !newPetMode ? "#fff" : T.textMuted }}>
+                    🐾 Mis mascotas
+                  </button>
+                  <button onClick={() => { setNewPetMode(true); setPetErr(""); }}
+                    style={{ flex:1, padding:"7px 0", border:"none", cursor:"pointer", borderRadius:8,
+                      fontSize:12, fontWeight:700, fontFamily:T.font,
+                      background: newPetMode ? T.brand : "transparent",
+                      color: newPetMode ? "#fff" : T.textMuted }}>
+                    + Registrar nueva
+                  </button>
+                </div>
+
+                {!newPetMode ? (
+                  pets.length > 0 ? (
+                    <Select value={form.petId} onChange={(e) => setForm({...form, petId:e.target.value})}>
+                      <option value="">— Seleccionar mascota —</option>
+                      {[...pets].sort((a,b) => a.name.localeCompare(b.name, "es"))
+                        .map((p) => <option key={p.id} value={p.id}>{p.name} ({p.species})</option>)}
+                    </Select>
+                  ) : (
+                    <div style={{ fontSize:13, color:T.textMuted, padding:"10px 0" }}>
+                      No tienes mascotas registradas. Usa "Registrar nueva" para agregar una ahora.
+                    </div>
+                  )
+                ) : (
+                  <div style={{ background:T.appBg, borderRadius:12, padding:"14px 16px", border:`1.5px solid ${T.brand}` }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:T.brand, marginBottom:10 }}>Nueva mascota</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 12px" }}>
+                      <Input label="Nombre *"     value={petForm.name}    onChange={(e) => setPetForm({...petForm, name:e.target.value})}    placeholder="Luna"/>
+                      <Select label="Especie"     value={petForm.species} onChange={(e) => setPetForm({...petForm, species:e.target.value})}>
+                        {["Perro","Gato","Conejo","Ave","Otro"].map((s) => <option key={s}>{s}</option>)}
+                      </Select>
+                      <Input label="Raza"         value={petForm.breed}   onChange={(e) => setPetForm({...petForm, breed:e.target.value})}   placeholder="Labrador"/>
+                      <Select label="Género"      value={petForm.gender}  onChange={(e) => setPetForm({...petForm, gender:e.target.value})}>
+                        <option>Hembra</option><option>Macho</option>
+                      </Select>
+                      <Input label="Edad (años)"  type="number" value={petForm.age}    onChange={(e) => setPetForm({...petForm, age:e.target.value})}    placeholder="3"/>
+                      <Input label="Peso (kg)"    type="number" step="0.1" value={petForm.weight} onChange={(e) => setPetForm({...petForm, weight:e.target.value})} placeholder="12.5"/>
+                    </div>
+                    {petErr && <div style={{ fontSize:12, color:"#dc2626", marginTop:6 }}>⚠ {petErr}</div>}
+                  </div>
+                )}
+              </div>
+
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 16px" }}>
                 <Input label="Fecha deseada *" type="date" value={form.date} onChange={(e) => setForm({...form, date:e.target.value})}/>
                 <Input label="Hora preferida"  type="time" value={form.time} onChange={(e) => setForm({...form, time:e.target.value})}/>
               </div>
               <Input label="Notas o instrucciones" value={form.notes} onChange={(e) => setForm({...form, notes:e.target.value})} placeholder="Ej: síntomas, alergias, instrucciones especiales…"/>
               <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
-                <Btn v="ghost" onClick={() => setBookModal(false)}>Cancelar</Btn>
-                <Btn v="accent" onClick={book} disabled={saving || !form.petId || !form.date}>
+                <Btn v="ghost" onClick={() => { setBookModal(false); setNewPetMode(false); setPetForm(EMPTY_PET); setPetErr(""); }}>Cancelar</Btn>
+                <Btn v="accent" onClick={book} disabled={saving || (!newPetMode && !form.petId) || !form.date}>
                   {saving ? "Enviando…" : "Solicitar cita →"}
                 </Btn>
               </div>
