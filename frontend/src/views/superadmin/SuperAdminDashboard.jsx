@@ -56,7 +56,7 @@ export default function SuperAdminDashboard() {
           <VetOSLogo size={30} white />
           <div style={{ width:1, height:20, background:"rgba(255,255,255,0.1)" }} />
           <span style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.35)", letterSpacing:"0.12em", textTransform:"uppercase" }}>
-            Panel VetOS
+            Panel ZOVITA
           </span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
@@ -71,7 +71,7 @@ export default function SuperAdminDashboard() {
         {/* Header */}
         <div style={{ marginBottom:28 }}>
           <h1 style={{ fontSize:28, fontWeight:900, color:"#fff", letterSpacing:"-0.03em", marginBottom:4 }}>Clínicas registradas</h1>
-          <p style={{ fontSize:14, color:"rgba(255,255,255,0.35)" }}>Gestiona todas las clínicas en la plataforma VetOS</p>
+          <p style={{ fontSize:14, color:"rgba(255,255,255,0.35)" }}>Gestiona todas las clínicas en la plataforma ZOVITA</p>
         </div>
 
         {/* KPIs */}

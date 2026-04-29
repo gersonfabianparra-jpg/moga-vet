@@ -4,9 +4,11 @@ import { store } from "../data/localStore.js";
 const useLocal = () => process.env.USE_LOCAL === "true" || !process.env.SUPABASE_URL || process.env.SUPABASE_URL.includes("your-project");
 
 const Pet = {
-  findAll: async () => {
-    if (useLocal()) return store.pets.findAll();
-    const { data, error } = await supabase.from("pets").select("*");
+  findAll: async (tenantId) => {
+    if (useLocal()) return store.pets.findAll(tenantId);
+    let q = supabase.from("pets").select("*");
+    if (tenantId != null) q = q.eq("tenantId", tenantId);
+    const { data, error } = await q;
     if (error) throw error;
     return data;
   },
@@ -16,9 +18,11 @@ const Pet = {
     if (error) throw error;
     return data;
   },
-  findByOwnerId: async (ownerId) => {
-    if (useLocal()) return store.pets.findByOwnerId(ownerId);
-    const { data, error } = await supabase.from("pets").select("*").eq("ownerId", ownerId);
+  findByOwnerId: async (ownerId, tenantId) => {
+    if (useLocal()) return store.pets.findByOwnerId(ownerId, tenantId);
+    let q = supabase.from("pets").select("*").eq("ownerId", ownerId);
+    if (tenantId != null) q = q.eq("tenantId", tenantId);
+    const { data, error } = await q;
     if (error) throw error;
     return data;
   },

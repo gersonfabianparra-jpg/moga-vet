@@ -4,9 +4,11 @@ import { store } from "../data/localStore.js";
 const useLocal = () => process.env.USE_LOCAL === "true" || !process.env.SUPABASE_URL || process.env.SUPABASE_URL.includes("your-project");
 
 const Appointment = {
-  findAll: async () => {
-    if (useLocal()) return store.appointments.findAll();
-    const { data, error } = await supabase.from("appointments").select("*").order("date").order("time");
+  findAll: async (tenantId) => {
+    if (useLocal()) return store.appointments.findAll(tenantId);
+    let q = supabase.from("appointments").select("*");
+    if (tenantId != null) q = q.eq("tenantId", tenantId);
+    const { data, error } = await q.order("date").order("time");
     if (error) throw error;
     return data;
   },

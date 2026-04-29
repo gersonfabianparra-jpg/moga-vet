@@ -19,6 +19,7 @@ export default function UsersView() {
   const { users, pets, currentUser, addUser, updateUser, removeUser } = useApp();
   const notify = useNotify();
 
+  const [clientSearch, setClientSearch] = useState("");
   const [modalClient, setModalClient] = useState(false);
   const [modalStaff,  setModalStaff]  = useState(false);
   const [modalEdit,   setModalEdit]   = useState(null);  // user object
@@ -31,8 +32,15 @@ export default function UsersView() {
 
   const isRoot = currentUser?.isRoot;
 
-  const clients = users.filter((u) => u.role === "client");
-  const staff   = users.filter((u) => u.role !== "client");
+  const [clientView, setClientView] = useState("list");
+
+  const staff = users.filter((u) => u.role !== "client");
+  const clients = users
+    .filter((u) => u.role === "client")
+    .filter((u) => {
+      const q = clientSearch.toLowerCase();
+      return !q || [u.name, u.email, u.phone, u.rut].join(" ").toLowerCase().includes(q);
+    });
 
   const saveClient = async () => {
     if (!formClient.name || !formClient.email || !formClient.rut) return;
@@ -136,46 +144,126 @@ export default function UsersView() {
         </div>
       </div>
 
-      {/* Clientes */}
-      <div style={{ marginBottom:12 }}><Label>Clientes registrados</Label></div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:14 }}>
-        {clients.map((c) => {
-          const myPets = pets.filter((p) => p.ownerId === c.id);
-          return (
-            <div key={c.id} className="hover-lift" style={{ background:T.panel, borderRadius:14, boxShadow:T.sm, border:`1px solid ${T.border}`, overflow:"hidden" }}>
-              <div style={{ background:`linear-gradient(135deg,${T.brand},${T.brandMid})`, padding:"16px 20px", display:"flex", alignItems:"center", gap:12 }}>
-                <Avatar name={c.name} size={44} bg="rgba(255,255,255,0.2)"/>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:15, fontWeight:800, color:"#fff", fontFamily:T.font }}>{c.name}</div>
-                  <div style={{ fontSize:13, color:"rgba(255,255,255,0.65)", marginTop:2 }}>RUT: {c.rut}</div>
-                </div>
-                {canEdit(c) && (
-                  <div style={{ display:"flex", gap:6 }}>
-                    <button onClick={() => openEdit(c)} style={{ background:"rgba(255,255,255,0.15)", border:"none", cursor:"pointer", color:"#fff", borderRadius:7, padding:"5px 10px", fontSize:12, fontWeight:600 }}>✎</button>
-                    {canDelete(c) && (
-                      <button onClick={() => setConfirmDel(c)} style={{ background:"rgba(220,38,38,0.7)", border:"none", cursor:"pointer", color:"#fff", borderRadius:7, padding:"5px 10px", fontSize:12, fontWeight:600 }}>✕</button>
-                    )}
+      {/* Clientes — cabecera con búsqueda y toggle */}
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
+        <Label>Clientes registrados</Label>
+        <div style={{ position:"relative", flex:"1 1 260px", maxWidth:360 }}>
+          <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", fontSize:15, color:T.textMuted, pointerEvents:"none" }}>🔍</span>
+          <input
+            value={clientSearch}
+            onChange={(e) => setClientSearch(e.target.value)}
+            placeholder="Buscar por nombre, RUT, teléfono o correo…"
+            className="moga-input"
+            style={{ width:"100%", padding:"9px 14px 9px 38px", border:`1.5px solid ${T.border}`,
+              borderRadius:10, fontSize:13, color:T.text, background:T.panel,
+              fontFamily:T.font, boxSizing:"border-box", boxShadow:T.sm }}
+          />
+        </div>
+        <div style={{ fontSize:13, color:T.textMuted, whiteSpace:"nowrap" }}>
+          {clients.length} resultado{clients.length !== 1 ? "s" : ""}
+        </div>
+        <div style={{ display:"flex", background:T.panel, border:`1.5px solid ${T.border}`, borderRadius:9, overflow:"hidden", boxShadow:T.sm }}>
+          {[["list","≡"],["grid","⊞"]].map(([mode, icon]) => (
+            <button key={mode} onClick={() => setClientView(mode)}
+              style={{ padding:"5px 13px", fontSize:16, border:"none", cursor:"pointer",
+                background: clientView === mode ? T.brand : "transparent",
+                color:      clientView === mode ? "#fff" : T.textMuted, transition:"background 0.15s" }}>
+              {icon}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Vista lista clientes */}
+      {clientView === "list" && (
+        <div style={{ background:T.panel, borderRadius:16, boxShadow:T.md, border:`1px solid ${T.border}`, overflow:"hidden", marginBottom:14 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 180px 140px 120px 80px",
+            background:T.appBg, borderBottom:`2px solid ${T.border}`, padding:"10px 20px" }}>
+            {["Nombre","Correo","Teléfono","Mascotas","Acciones"].map((h) => (
+              <div key={h} style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
+            ))}
+          </div>
+          {clients.map((c, idx) => {
+            const myPets = pets.filter((p) => p.ownerId === c.id);
+            return (
+              <div key={c.id} style={{ display:"grid", gridTemplateColumns:"1fr 180px 140px 120px 80px",
+                padding:"10px 20px", alignItems:"center",
+                borderBottom: idx < clients.length-1 ? `1px solid ${T.border}` : "none",
+                background:"transparent", transition:"background 0.12s" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = T.appBg}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <Avatar name={c.name} size={32} bg={T.brand}/>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
+                    {c.rut && <div style={{ fontSize:11, color:T.textMuted }}>{c.rut}</div>}
                   </div>
-                )}
-              </div>
-              <div style={{ padding:"14px 20px" }}>
-                <div style={{ fontSize:13, color:T.textMuted, marginBottom:4 }}>📧 {c.email}</div>
-                <div style={{ fontSize:13, color:T.textMuted, marginBottom:12 }}>📱 {c.phone}</div>
-                <div style={{ paddingTop:10, borderTop:`1px solid ${T.border}`, fontSize:13, display:"flex", gap:8, flexWrap:"wrap" }}>
+                </div>
+                <div style={{ fontSize:12, color:T.textMuted, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.email}</div>
+                <div style={{ fontSize:12, color:T.textMuted }}>{c.phone||"—"}</div>
+                <div style={{ fontSize:12, color:T.text }}>
                   {myPets.length > 0
-                    ? myPets.map((p) => (
-                        <span key={p.id} style={{ display:"inline-flex", alignItems:"center", gap:4, background:T.brandLight, color:T.brand, padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600 }}>
-                          {p.species === "Perro" ? "🐶" : p.species === "Gato" ? "🐱" : "🐾"} {p.name}
+                    ? myPets.slice(0,2).map((p) => (
+                        <span key={p.id} style={{ display:"inline-block", background:T.brandLight, color:T.brand,
+                          padding:"2px 8px", borderRadius:20, fontSize:11, fontWeight:600, marginRight:4 }}>
+                          {p.name}
                         </span>
                       ))
-                    : <span style={{ color:T.textMuted, fontSize:12 }}>Sin mascotas registradas</span>
+                    : <span style={{ color:T.textMuted, fontSize:11 }}>—</span>
                   }
+                  {myPets.length > 2 && <span style={{ fontSize:11, color:T.textMuted }}>+{myPets.length-2}</span>}
+                </div>
+                <div style={{ display:"flex", gap:6 }}>
+                  {canEdit(c) && <button onClick={() => openEdit(c)} style={{ background:T.brandLight, border:"none", cursor:"pointer", color:T.brand, borderRadius:6, padding:"4px 8px", fontSize:12, fontWeight:600 }}>✎</button>}
+                  {canDelete(c) && <button onClick={() => setConfirmDel(c)} style={{ background:"#fee2e2", border:"none", cursor:"pointer", color:"#dc2626", borderRadius:6, padding:"4px 8px", fontSize:12, fontWeight:600 }}>✕</button>}
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Vista cuadros clientes */}
+      {clientView === "grid" && (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:14 }}>
+          {clients.map((c) => {
+            const myPets = pets.filter((p) => p.ownerId === c.id);
+            return (
+              <div key={c.id} className="hover-lift" style={{ background:T.panel, borderRadius:14, boxShadow:T.sm, border:`1px solid ${T.border}`, overflow:"hidden" }}>
+                <div style={{ background:`linear-gradient(135deg,${T.brand},${T.brandMid})`, padding:"16px 20px", display:"flex", alignItems:"center", gap:12 }}>
+                  <Avatar name={c.name} size={44} bg="rgba(255,255,255,0.2)"/>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:15, fontWeight:800, color:"#fff", fontFamily:T.font }}>{c.name}</div>
+                    <div style={{ fontSize:13, color:"rgba(255,255,255,0.65)", marginTop:2 }}>RUT: {c.rut}</div>
+                  </div>
+                  {canEdit(c) && (
+                    <div style={{ display:"flex", gap:6 }}>
+                      <button onClick={() => openEdit(c)} style={{ background:"rgba(255,255,255,0.15)", border:"none", cursor:"pointer", color:"#fff", borderRadius:7, padding:"5px 10px", fontSize:12, fontWeight:600 }}>✎</button>
+                      {canDelete(c) && (
+                        <button onClick={() => setConfirmDel(c)} style={{ background:"rgba(220,38,38,0.7)", border:"none", cursor:"pointer", color:"#fff", borderRadius:7, padding:"5px 10px", fontSize:12, fontWeight:600 }}>✕</button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding:"14px 20px" }}>
+                  <div style={{ fontSize:13, color:T.textMuted, marginBottom:4 }}>📧 {c.email}</div>
+                  <div style={{ fontSize:13, color:T.textMuted, marginBottom:12 }}>📱 {c.phone}</div>
+                  <div style={{ paddingTop:10, borderTop:`1px solid ${T.border}`, fontSize:13, display:"flex", gap:8, flexWrap:"wrap" }}>
+                    {myPets.length > 0
+                      ? myPets.map((p) => (
+                          <span key={p.id} style={{ display:"inline-flex", alignItems:"center", gap:4, background:T.brandLight, color:T.brand, padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600 }}>
+                            {p.species==="Perro"?"🐶":p.species==="Gato"?"🐱":"🐾"} {p.name}
+                          </span>
+                        ))
+                      : <span style={{ color:T.textMuted, fontSize:12 }}>Sin mascotas registradas</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Modal: nuevo cliente */}
       {modalClient && (

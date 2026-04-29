@@ -4,9 +4,11 @@ import { store } from "../data/localStore.js";
 const useLocal = () => process.env.USE_LOCAL === "true" || !process.env.SUPABASE_URL || process.env.SUPABASE_URL.includes("your-project");
 
 const Vaccine = {
-  findAll: async () => {
-    if (useLocal()) return store.vaccines.findAll();
-    const { data, error } = await supabase.from("vaccines").select("*");
+  findAll: async (tenantId) => {
+    if (useLocal()) return store.vaccines.findAll(tenantId);
+    let q = supabase.from("vaccines").select("*");
+    if (tenantId != null) q = q.eq("tenantId", tenantId);
+    const { data, error } = await q;
     if (error) throw error;
     return data;
   },

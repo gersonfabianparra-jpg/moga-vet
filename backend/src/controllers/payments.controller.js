@@ -1,10 +1,12 @@
 import Payment from "../models/Payment.js";
 
+const tid = (req) => req.user?.role === "superadmin" ? null : (req.user?.tenantId ?? null);
+
 export const getAll = async (req, res, next) => {
   try {
     const payments = req.user.role === "client"
       ? await Payment.findByClientId(req.user.id)
-      : await Payment.findAll();
+      : await Payment.findAll(tid(req));
     res.json(payments);
   } catch (err) {
     next(err);
@@ -13,7 +15,7 @@ export const getAll = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const payment = await Payment.create(req.body);
+    const payment = await Payment.create({ ...req.body, tenantId: req.user.tenantId });
     res.status(201).json(payment);
   } catch (err) {
     next(err);

@@ -7,7 +7,7 @@ import Btn      from "../components/ui/Btn.jsx";
 import VetOSLogo from "../components/ui/VetOSLogo.jsx";
 import ECGLine   from "../components/ui/ECGLine.jsx";
 
-export default function LoginView({ onRegister }) {
+export default function LoginView() {
   const { login } = useApp();
   const [tab, setTab]       = useState("staff");
   const [email, setEmail]   = useState("");
@@ -39,7 +39,7 @@ export default function LoginView({ onRegister }) {
   return (
     <div style={{ minHeight:"100vh", display:"grid", gridTemplateColumns:"1fr 1fr", fontFamily:T.font }}>
 
-      {/* ── Panel izquierdo — identidad VetOS ───────────────────────── */}
+      {/* ── Panel izquierdo — identidad ZOVITA ──────────────────────── */}
       <div style={{
         background: "linear-gradient(160deg,#0F0F1A 0%,#1a1740 50%,#2d2a7a 100%)",
         display: "flex", flexDirection: "column",
@@ -65,7 +65,7 @@ export default function LoginView({ onRegister }) {
               fontSize: 48, fontWeight: 900, color: "#fff",
               letterSpacing: "-0.04em", lineHeight: 1, fontFamily: T.font,
             }}>
-              Vet<span style={{ color: "#818CF8" }}>OS</span>
+              Zo<span style={{ color: "#818CF8" }}>VITA</span>
             </div>
             <div style={{
               fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.28)",
@@ -81,7 +81,7 @@ export default function LoginView({ onRegister }) {
           </div>
 
           <p style={{ fontSize:16, color:"rgba(255,255,255,0.45)", lineHeight:1.7, maxWidth:340, marginBottom:36 }}>
-            El sistema operativo para tu veterinaria. Gestión completa de pacientes, citas y más.
+            La plataforma que cuida lo que más importa. Gestión completa de pacientes, citas y más.
           </p>
 
           {/* Features pill badges */}
@@ -154,14 +154,6 @@ export default function LoginView({ onRegister }) {
             )}
           </div>
 
-          {onRegister && (
-            <p style={{ textAlign:"center", fontSize:13, color:T.textMuted, marginTop:20 }}>
-              ¿No tienes cuenta?{" "}
-              <span onClick={onRegister} style={{ color:T.brand, fontWeight:700, cursor:"pointer" }}>
-                Registra tu clínica gratis →
-              </span>
-            </p>
-          )}
         </div>
       </div>
     </div>

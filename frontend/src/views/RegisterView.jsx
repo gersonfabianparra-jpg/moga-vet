@@ -68,7 +68,7 @@ export default function RegisterView({ onLogin }) {
         </div>
         <div style={{ marginBottom:6 }}>
           <div style={{ fontSize:36, fontWeight:900, color:"#fff", letterSpacing:"-0.04em", lineHeight:1 }}>
-            Vet<span style={{ color:"#818CF8" }}>OS</span>
+            Zo<span style={{ color:"#818CF8" }}>VITA</span>
           </div>
           <div style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.28)", letterSpacing:"0.2em", textTransform:"uppercase", marginTop:4 }}>Platform</div>
         </div>
@@ -124,7 +124,7 @@ export default function RegisterView({ onLogin }) {
               <div style={{ width:80, height:80, borderRadius:"50%", background:"linear-gradient(135deg,#6366F1,#818CF8)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, margin:"0 auto 24px", boxShadow:"0 12px 36px rgba(99,102,241,0.4)" }}>✓</div>
               <h3 style={{ fontSize:26, fontWeight:900, color:T.text, marginBottom:10 }}>¡Clínica registrada!</h3>
               <p style={{ fontSize:15, color:T.textMuted, lineHeight:1.6, marginBottom:8 }}>
-                <strong>{form.clinicName}</strong> ya está en VetOS.
+                <strong>{form.clinicName}</strong> ya está en ZOVITA.
               </p>
               <p style={{ fontSize:14, color:T.textMuted, marginBottom:32, lineHeight:1.6 }}>
                 Recibirás un correo de bienvenida en <strong>{form.email}</strong> con los siguientes pasos.

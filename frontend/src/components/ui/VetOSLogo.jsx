@@ -1,4 +1,4 @@
-// VetOS Logo — ECG que termina en pata de animal
+// ZOVITA Logo — ECG que termina en pata de animal
 // Props: size, white, showText, hero (solo ícono grande para paneles)
 
 export default function VetOSLogo({ size = 32, white = false, showText = true, hero = false }) {
@@ -57,7 +57,7 @@ export default function VetOSLogo({ size = 32, white = false, showText = true, h
             color: textMain,
             lineHeight: 1,
           }}>
-            Vet<span style={{ color: textAccent, fontWeight: 900 }}>OS</span>
+            Zo<span style={{ color: textAccent, fontWeight: 900 }}>VITA</span>
           </div>
           <div style={{
             fontSize: size * 0.24,

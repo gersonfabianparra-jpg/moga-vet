@@ -11,6 +11,7 @@ import paymentsRoutes from "./routes/payments.routes.js";
 import usersRoutes        from "./routes/users.routes.js";
 import appointmentsRoutes from "./routes/appointments.routes.js";
 import tenantsRoutes      from "./routes/tenants.routes.js";
+import blockedSlotsRoutes from "./routes/blockedSlots.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
@@ -27,7 +28,8 @@ app.use("/api/vaccines", vaccinesRoutes);
 app.use("/api/payments", paymentsRoutes);
 app.use("/api/users",        usersRoutes);
 app.use("/api/appointments", appointmentsRoutes);
-app.use("/api/tenants",      tenantsRoutes);
+app.use("/api/tenants",       tenantsRoutes);
+app.use("/api/blocked-slots", blockedSlotsRoutes);
 
 app.use(errorHandler);
 

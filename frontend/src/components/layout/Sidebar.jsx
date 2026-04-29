@@ -6,7 +6,6 @@ import ECGLine   from "../ui/ECGLine.jsx";
 const NAV = [
   { id:"overview",      icon:"▦",  label:"Inicio" },
   { id:"pets",          icon:"🐾", label:"Mascotas" },
-  { id:"records",       icon:"📋", label:"Fichas médicas" },
   { id:"grooming",      icon:"✂️", label:"Peluquería" },
   { id:"vaccines",      icon:"💉", label:"Vacunas" },
   { id:"payments",      icon:"💳", label:"Pagos" },
@@ -14,7 +13,7 @@ const NAV = [
   { id:"users",         icon:"👥", label:"Clientes" },
 ];
 
-export default function Sidebar({ user, activeTab, onTab, onLogout, onSearch, badges = {} }) {
+export default function Sidebar({ user, activeTab, onTab, onLogout, onSearch, onEditProfile, badges = {} }) {
   return (
     <div style={{
       width: 248,
@@ -46,7 +45,7 @@ export default function Sidebar({ user, activeTab, onTab, onLogout, onSearch, ba
               fontSize: 22, fontWeight: 900, color: "#fff",
               letterSpacing: "-0.04em", fontFamily: T.font,
             }}>
-              Vet<span style={{ color: "#818CF8" }}>OS</span>
+              Zo<span style={{ color: "#818CF8" }}>VITA</span>
             </div>
             <div style={{
               fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.28)",
@@ -146,12 +145,19 @@ export default function Sidebar({ user, activeTab, onTab, onLogout, onSearch, ba
 
       {/* ── Usuario ──────────────────────────────────────────────────── */}
       <div style={{ padding: "10px 12px 16px" }}>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10, marginBottom: 8,
-          padding: "10px 12px", borderRadius: 10,
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(255,255,255,0.07)",
-        }}>
+        <div
+          onClick={onEditProfile}
+          title="Editar perfil"
+          style={{
+            display: "flex", alignItems: "center", gap: 10, marginBottom: 8,
+            padding: "10px 12px", borderRadius: 10,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.15)"; e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
+        >
           <Avatar name={user.name} size={32} bg={T.brand} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
@@ -167,6 +173,7 @@ export default function Sidebar({ user, activeTab, onTab, onLogout, onSearch, ba
               {user.role === "admin" ? "Administrador" : "Veterinario/a"}
             </div>
           </div>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>✎</span>
         </div>
         <button
           onClick={onLogout}
