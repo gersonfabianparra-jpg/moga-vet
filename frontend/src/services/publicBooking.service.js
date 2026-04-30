@@ -1,7 +1,9 @@
 import api from "./api.js";
 
 export const getClinicInfo = (tenantId) =>
-  api.get(`/public/info/${tenantId}`).then((r) => r.data);
+  tenantId === "default"
+    ? api.get("/public/default").then((r) => r.data)
+    : api.get(`/public/info/${tenantId}`).then((r) => r.data);
 
 export const getSlots = (tenantId, date) =>
   api.get(`/public/slots/${tenantId}?date=${date}`).then((r) => r.data);

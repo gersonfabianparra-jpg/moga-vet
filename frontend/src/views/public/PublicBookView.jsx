@@ -63,28 +63,32 @@ function SlotGrid({ slots, selected, onSelect }) {
 }
 
 export default function PublicBookView({ tenantId }) {
-  const [clinic,    setClinic]    = useState(null);
-  const [clinicErr, setClinicErr] = useState("");
-  const [slots,     setSlots]     = useState(null);
-  const [slotsDate, setSlotsDate] = useState("");
-  const [form,      setForm]      = useState(EMPTY_FORM);
-  const [rutErr,    setRutErr]    = useState("");
-  const [step,      setStep]      = useState(1); // 1=fecha/hora, 2=datos cliente, 3=confirmado
-  const [saving,    setSaving]    = useState(false);
-  const [err,       setErr]       = useState("");
+  const [clinic,       setClinic]       = useState(null);
+  const [clinicErr,    setClinicErr]    = useState("");
+  const [realTenantId, setRealTenantId] = useState(tenantId);
+  const [slots,        setSlots]        = useState(null);
+  const [slotsDate,    setSlotsDate]    = useState("");
+  const [form,         setForm]         = useState(EMPTY_FORM);
+  const [rutErr,       setRutErr]       = useState("");
+  const [step,         setStep]         = useState(1);
+  const [saving,       setSaving]       = useState(false);
+  const [err,          setErr]          = useState("");
 
   useEffect(() => {
     if (!tenantId) { setClinicErr("Enlace de reserva inválido."); return; }
     getClinicInfo(tenantId)
-      .then(setClinic)
-      .catch(() => setClinicErr("No se encontró la clínica. Verifica el enlace."));
+      .then((data) => {
+        setClinic(data);
+        if (data.tenantId) setRealTenantId(data.tenantId);
+      })
+      .catch(() => setClinicErr("La clínica aún no ha configurado su agenda online. Intenta más tarde o contáctalos directamente."));
   }, [tenantId]);
 
   useEffect(() => {
     if (!form.date || form.date === slotsDate) return;
     setSlots(null);
     setSlotsDate(form.date);
-    getSlots(tenantId, form.date)
+    getSlots(realTenantId, form.date)
       .then(setSlots)
       .catch(() => setSlots([]));
   }, [form.date]);
@@ -110,7 +114,7 @@ export default function PublicBookView({ tenantId }) {
         ...form,
         clientRut: form.clientRut ? formatRut(form.clientRut) : "",
       };
-      await createBooking(tenantId, payload);
+      await createBooking(realTenantId, payload);
       setStep(3);
     } catch (e) {
       setErr(e.response?.data?.message || "Error al reservar. Intenta de nuevo.");
