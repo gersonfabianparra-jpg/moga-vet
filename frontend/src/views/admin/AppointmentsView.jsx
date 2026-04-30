@@ -167,7 +167,7 @@ export default function AppointmentsView() {
   const closeModal = () => { setModal(null); setForm(emptyForm()); };
 
   const handleSave = async () => {
-    if (!form.petId || !form.date || !form.time) return;
+    if ((!form.petId && !form.guestName) || !form.date || !form.time) return;
     // Verificar si el horario está bloqueado
     const apptMins = timeToMins(form.time);
     const apptEnd  = apptMins + (+form.duration || 30);
@@ -560,16 +560,18 @@ export default function AppointmentsView() {
 
                   {/* Citas */}
                   {dayAppts.map((appt) => {
-                    const cfg  = TYPE_CFG[appt.type] || TYPE_CFG.otro;
-                    const pet  = pets.find((p) => p.id === appt.petId);
-                    const top  = minsToTop(timeToMins(appt.time), HOUR_H);
-                    const h    = Math.max(((appt.duration || 30) / 60) * HOUR_H, 22);
+                    const cfg       = TYPE_CFG[appt.type] || TYPE_CFG.otro;
+                    const pet       = pets.find((p) => p.id === appt.petId);
+                    const isGuest   = !!appt.guestName;
+                    const label     = isGuest ? appt.guestName : (pet?.name ?? "—");
+                    const top       = minsToTop(timeToMins(appt.time), HOUR_H);
+                    const h         = Math.max(((appt.duration || 30) / 60) * HOUR_H, 22);
                     const cancelled = appt.status === "cancelada";
                     return (
                       <div
                         key={appt.id}
                         onClick={(e) => { e.stopPropagation(); openEdit(appt); }}
-                        title={`${appt.time} · ${cfg.label} · ${pet?.name}`}
+                        title={`${appt.time} · ${cfg.label} · ${label}${isGuest ? " (reserva pública)" : ""}`}
                         style={{
                           position: "absolute",
                           top: top + 2, left: 3, right: 3,
@@ -589,11 +591,11 @@ export default function AppointmentsView() {
                         onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
                       >
                         <div style={{ fontSize: 10, fontWeight: 800, color: cfg.color, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {cfg.icon} {appt.time} · {pet?.name ?? "—"}
+                          {isGuest ? "📱" : cfg.icon} {appt.time} · {label}
                         </div>
                         {h > 32 && (
                           <div style={{ fontSize: 9.5, color: cfg.color, opacity: 0.75, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {cfg.label}
+                            {isGuest ? "Reserva pública" : cfg.label}
                           </div>
                         )}
                       </div>
@@ -685,7 +687,27 @@ export default function AppointmentsView() {
             </Select>
           </div>
 
-          <Input label="Notas" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Observaciones, instrucciones…" />
+          <Input label="Notas" value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Observaciones, instrucciones…" />
+
+          {/* Panel de reserva pública */}
+          {form.guestName && (
+            <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: 10, padding: "12px 16px", marginTop: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#4338CA", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+                📱 Reserva pública — cliente sin cuenta
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 13, color: "#334155" }}>
+                <div><span style={{ fontWeight: 700 }}>Nombre:</span> {form.guestName}</div>
+                <div><span style={{ fontWeight: 700 }}>Email:</span> {form.guestEmail}</div>
+                {form.guestPhone && <div><span style={{ fontWeight: 700 }}>Teléfono:</span> {form.guestPhone}</div>}
+                {form.guestRut   && <div><span style={{ fontWeight: 700 }}>RUT:</span> {form.guestRut}</div>}
+                {form.guestPetName && (
+                  <div style={{ gridColumn: "span 2" }}>
+                    <span style={{ fontWeight: 700 }}>Mascota:</span> {form.guestPetName} ({form.guestPetSpecies || "—"})
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {modal.mode === "edit" && (
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
@@ -707,7 +729,7 @@ export default function AppointmentsView() {
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <Btn v="ghost" onClick={closeModal}>Cancelar</Btn>
-              <Btn v="accent" onClick={handleSave} disabled={saving || !form.petId || !form.date || !form.time}>
+              <Btn v="accent" onClick={handleSave} disabled={saving || (!form.petId && !form.guestName) || !form.date || !form.time}>
                 {saving ? "Guardando…" : modal.mode === "create" ? "Crear cita" : "Guardar"}
               </Btn>
             </div>

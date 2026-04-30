@@ -20,7 +20,21 @@ import errorHandler from "./middleware/errorHandler.js";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:4173",
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, cb) => {
+    // Permitir sin origin (curl, apps móviles) y origins en lista
+    if (!origin || allowedOrigins.some((o) => origin.startsWith(o))) return cb(null, true);
+    // Rutas públicas (reserva online) permiten cualquier origin
+    cb(null, true);
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: "12mb" }));
 
 app.use("/api/auth", authRoutes);

@@ -121,26 +121,20 @@ router.post("/book/:tenantId", async (req, res, next) => {
       return res.status(409).json({ message: `Horario no disponible${blockedBy.reason ? `: ${blockedBy.reason}` : ""}. Por favor elige otro.` });
     }
 
-    // Componer notas con datos del cliente
-    const clientInfo = [
-      `[RESERVA PÚBLICA]`,
-      `Cliente: ${clientName}`,
-      `Email: ${clientEmail}`,
-      clientPhone ? `Teléfono: ${clientPhone}` : null,
-      clientRut   ? `RUT: ${clientRut}` : null,
-      petName     ? `Mascota: ${petName} (${petSpecies || "—"})` : null,
-      notes       ? `Notas: ${notes}` : null,
-    ].filter(Boolean).join(" | ");
-
     const appt = await Appointment.create({
       tenantId,
-      clientId:  null,
-      petId:     null,
       date,
       time,
-      type:      type || "consulta",
-      status:    "pendiente",
-      notes:     clientInfo,
+      duration:        30,
+      type:            type || "consulta",
+      status:          "pendiente",
+      notes:           notes || null,
+      guestName:       clientName,
+      guestEmail:      clientEmail,
+      guestPhone:      clientPhone  || null,
+      guestRut:        clientRut    || null,
+      guestPetName:    petName      || null,
+      guestPetSpecies: petSpecies   || null,
     });
 
     res.status(201).json({ ok: true, id: appt.id });
