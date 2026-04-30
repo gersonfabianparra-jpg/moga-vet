@@ -10,6 +10,7 @@ const NAV = [
   { id:"vaccines",      icon:"💉", label:"Vacunas" },
   { id:"payments",      icon:"💳", label:"Pagos" },
   { id:"appointments",  icon:"🗓", label:"Agenda" },
+  { id:"reservations",  icon:"📋", label:"Reservas online" },
   { id:"users",         icon:"👥", label:"Clientes" },
   { id:"settings",      icon:"⚙️", label:"Configuración" },
 ];

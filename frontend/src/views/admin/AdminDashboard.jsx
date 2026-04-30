@@ -11,8 +11,9 @@ import GroomingView     from "./GroomingView.jsx";
 import VaccinesView     from "./VaccinesView.jsx";
 import PaymentsView     from "./PaymentsView.jsx";
 import UsersView        from "./UsersView.jsx";
-import AppointmentsView from "./AppointmentsView.jsx";
-import SettingsView     from "./SettingsView.jsx";
+import AppointmentsView  from "./AppointmentsView.jsx";
+import ReservationsView  from "./ReservationsView.jsx";
+import SettingsView      from "./SettingsView.jsx";
 import Modal  from "../../components/ui/Modal.jsx";
 import Input  from "../../components/ui/Input.jsx";
 import Btn    from "../../components/ui/Btn.jsx";
@@ -76,9 +77,10 @@ export default function AdminDashboard() {
   const [profile, setProfile]       = useState(false);
   const [sidebarOpen, setSidebar]   = useState(false);
 
-  const urgentVax    = vaccines.filter((v) => vaxStatus(v.nextDue).key !== "green").length;
-  const pendingPay   = payments.filter((p) => p.status === "pendiente").length;
-  const pendingAppts = appointments.filter((a) => a.status === "pendiente").length;
+  const urgentVax         = vaccines.filter((v) => vaxStatus(v.nextDue).key !== "green").length;
+  const pendingPay        = payments.filter((p) => p.status === "pendiente").length;
+  const pendingAppts      = appointments.filter((a) => a.status === "pendiente").length;
+  const pendingReservations = appointments.filter((a) => a.guestName && a.status === "pendiente").length;
 
   // Ctrl+K / Cmd+K
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function AdminDashboard() {
         onLogout={logout}
         onSearch={() => setSearch(true)}
         onEditProfile={() => setProfile(true)}
-        badges={{ vaccines: urgentVax, payments: pendingPay, appointments: pendingAppts }}
+        badges={{ vaccines: urgentVax, payments: pendingPay, appointments: pendingAppts, reservations: pendingReservations }}
         isMobile={isMobile}
         open={sidebarOpen}
         onClose={() => setSidebar(false)}
@@ -136,9 +138,10 @@ export default function AdminDashboard() {
         {tab === "grooming"     && <GroomingView     />}
         {tab === "vaccines"     && <VaccinesView     />}
         {tab === "payments"     && <PaymentsView     />}
-        {tab === "appointments" && <AppointmentsView />}
-        {tab === "users"        && <UsersView        />}
-        {tab === "settings"     && <SettingsView     />}
+        {tab === "appointments"  && <AppointmentsView  />}
+        {tab === "reservations"  && <ReservationsView  />}
+        {tab === "users"         && <UsersView         />}
+        {tab === "settings"      && <SettingsView      />}
       </div>
 
       {profile && <ProfileModal onClose={() => setProfile(false)}/>}
