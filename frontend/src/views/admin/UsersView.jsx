@@ -145,7 +145,7 @@ export default function UsersView() {
 
       {/* Personal MOGA */}
       <div style={{ marginBottom:28 }}>
-        <Label>Personal MOGA</Label>
+        <Label>Personal de la clínica</Label>
         <div style={{ display:"flex", gap:14, marginTop:10, flexWrap:"wrap" }}>
           {staff.map((u) => (
             <div key={u.id} style={{ background:T.panel, borderRadius:14, boxShadow:T.sm, border:`1px solid ${T.border}`, padding:"16px 20px", display:"flex", alignItems:"center", gap:14, minWidth:240 }}>
@@ -374,9 +374,9 @@ export default function UsersView() {
 
       {/* Modal: nuevo personal (solo root) */}
       {modalStaff && (
-        <Modal title="Agregar personal MOGA" onClose={() => setModalStaff(false)}>
+        <Modal title="Agregar personal" onClose={() => setModalStaff(false)}>
           <Input label="Nombre completo *" value={formStaff.name}     onChange={(e) => setFormStaff({...formStaff, name:e.target.value})}     placeholder="Dr. Juan Pérez"/>
-          <Input label="Correo *" type="email" value={formStaff.email} onChange={(e) => setFormStaff({...formStaff, email:e.target.value})}   placeholder="vet@moga.cl"/>
+          <Input label="Correo *" type="email" value={formStaff.email} onChange={(e) => setFormStaff({...formStaff, email:e.target.value})}   placeholder="vet@clinica.cl"/>
           <Input label="Contraseña *" type="password" value={formStaff.password} onChange={(e) => setFormStaff({...formStaff, password:e.target.value})}/>
           <Input label="Teléfono" value={formStaff.phone} onChange={(e) => setFormStaff({...formStaff, phone:e.target.value})} placeholder="+56 9 1234 5678"/>
           <div style={{ marginBottom:16 }}>

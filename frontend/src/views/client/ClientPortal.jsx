@@ -135,7 +135,7 @@ export default function ClientPortal() {
         {/* Mascotas */}
         {tab === "pets" && !selPet && (
           pets.length === 0
-            ? <div style={{ textAlign:"center", padding:60, color:T.textMuted, background:T.panel, borderRadius:16 }}><div style={{ fontSize:52, marginBottom:12 }}>🐾</div><div>Aún no tienes mascotas registradas en MOGA.</div></div>
+            ? <div style={{ textAlign:"center", padding:60, color:T.textMuted, background:T.panel, borderRadius:16 }}><div style={{ fontSize:52, marginBottom:12 }}>🐾</div><div>Aún no tienes mascotas registradas en ZOVITA.</div></div>
             : <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))", gap:14 }}>
                 {pets.map((pet) => {
                   const recs = records.filter((r) => r.petId === pet.id);
@@ -234,7 +234,7 @@ export default function ClientPortal() {
                         <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:20, background:sc.bg, color:sc.color, fontSize:12, fontWeight:600 }}>
                           {a.status.charAt(0).toUpperCase() + a.status.slice(1)}
                         </span>
-                        {a.status === "pendiente" && <div style={{ fontSize:11, color:T.textMuted, marginTop:6 }}>El equipo MOGA confirmará tu cita pronto.</div>}
+                        {a.status === "pendiente" && <div style={{ fontSize:11, color:T.textMuted, marginTop:6 }}>El equipo ZOVITA confirmará tu cita pronto.</div>}
                         {a.status === "confirmada" && <div style={{ fontSize:11, color:T.greenText, marginTop:6, fontWeight:600 }}>✓ Cita confirmada</div>}
                       </div>
                     </div>
@@ -341,13 +341,13 @@ export default function ClientPortal() {
 
       {/* Modal agendar cita */}
       {bookModal && (
-        <Modal title="Solicitar cita" sub="Tu solicitud será confirmada por el equipo MOGA"
+        <Modal title="Solicitar cita" sub="Tu solicitud será confirmada por el equipo de la clínica"
           onClose={() => { setBookModal(false); setNewPetMode(false); setPetForm(EMPTY_PET); setPetErr(""); }}>
           {booked ? (
             <div style={{ textAlign:"center", padding:"24px 0" }}>
               <div style={{ width:64, height:64, borderRadius:"50%", background:T.green, display:"flex", alignItems:"center", justifyContent:"center", fontSize:28, margin:"0 auto 16px" }}>✅</div>
               <div style={{ fontSize:20, fontWeight:800, color:T.greenText, marginBottom:6 }}>¡Cita solicitada!</div>
-              <div style={{ fontSize:14, color:T.textMuted }}>El equipo MOGA confirmará tu cita pronto. La verás en la pestaña Agenda.</div>
+              <div style={{ fontSize:14, color:T.textMuted }}>La clínica confirmará tu cita pronto. La verás en la pestaña Agenda.</div>
             </div>
           ) : (
             <>

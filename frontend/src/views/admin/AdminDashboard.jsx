@@ -52,7 +52,7 @@ function ProfileModal({ onClose }) {
         placeholder="Dra. María González"/>
       <Input label="Correo electrónico *" type="email"
         value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-        placeholder="admin@moga.cl"/>
+        placeholder="vet@clinica.cl"/>
       <Input label="Teléfono"
         value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
         placeholder="+56 9 1234 5678"/>
