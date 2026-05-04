@@ -70,7 +70,7 @@ function ProfileModal({ onClose }) {
 }
 
 export default function AdminDashboard() {
-  const { currentUser, logout, vaccines, payments, appointments } = useApp();
+  const { currentUser, logout, vaccines, payments, appointments, settings } = useApp();
   const { isMobile } = useBreakpoint();
   const [tab, setTab]               = useState("overview");
   const [search, setSearch]         = useState(false);
@@ -122,8 +122,13 @@ export default function AdminDashboard() {
                 width:38, height:38, borderRadius:10, fontSize:20, cursor:"pointer",
                 display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
             >☰</button>
-            <div style={{ fontSize:17, fontWeight:800, color:"#fff", fontFamily:T.font, letterSpacing:"-0.03em" }}>
-              Zo<span style={{ color:"#818CF8" }}>VITA</span>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              {settings?.logoBase64
+                ? <img src={settings.logoBase64} alt="logo" style={{ height:28, width:28, objectFit:"contain", borderRadius:6, background:"#fff" }} />
+                : null}
+              <div style={{ fontSize:17, fontWeight:800, color:"#fff", fontFamily:T.font, letterSpacing:"-0.03em" }}>
+                {settings?.clinicName || <span>Zo<span style={{ color:"#818CF8" }}>VITA</span></span>}
+              </div>
             </div>
             <div style={{ flex:1 }} />
             <button onClick={() => setSearch(true)}

@@ -153,14 +153,22 @@ export default function PublicBookView({ tenantId }) {
       {/* ── Encabezado ── */}
       <div style={{ background:`linear-gradient(135deg,#0F0F1A,#1e1b4b,#312e81)`, padding:"28px 24px" }}>
         <div style={{ maxWidth:680, margin:"0 auto", display:"flex", alignItems:"center", gap:16 }}>
-          <div style={{ borderRadius:12, overflow:"hidden", flexShrink:0 }}>
-            <VetOSLogo size={40} white />
+          <div style={{ borderRadius:14, overflow:"hidden", flexShrink:0, width:52, height:52,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            background: clinic.logoBase64 ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.08)",
+            boxShadow:"0 4px 20px rgba(0,0,0,0.3)",
+          }}>
+            {clinic.logoBase64
+              ? <img src={clinic.logoBase64} alt="logo" style={{ width:48, height:48, objectFit:"contain" }} />
+              : <VetOSLogo size={36} white hero />
+            }
           </div>
           <div>
-            <div style={{ fontSize:20, fontWeight:800, color:"#fff", letterSpacing:"-0.03em" }}>
+            <div style={{ fontSize:22, fontWeight:900, color:"#fff", letterSpacing:"-0.03em" }}>
               {clinic.clinicName || "ZOVITA"}
             </div>
-            {clinic.address && <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", marginTop:2 }}>{clinic.address}</div>}
+            {clinic.slogan && <div style={{ fontSize:13, color:"rgba(255,255,255,0.6)", marginTop:2, fontStyle:"italic" }}>{clinic.slogan}</div>}
+            {clinic.address && <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)", marginTop:clinic.slogan ? 1 : 2 }}>{clinic.address}</div>}
           </div>
         </div>
       </div>

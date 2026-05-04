@@ -1,3 +1,4 @@
+import { useApp } from "../../context/AppContext.jsx";
 import T from "../../styles/tokens.js";
 import Avatar   from "../ui/Avatar.jsx";
 import VetOSLogo from "../ui/VetOSLogo.jsx";
@@ -16,6 +17,10 @@ const NAV = [
 ];
 
 export default function Sidebar({ user, activeTab, onTab, onLogout, onSearch, onEditProfile, badges = {}, open, onClose, isMobile }) {
+  const { settings } = useApp();
+  const clinicLogo = settings?.logoBase64 || null;
+  const clinicName = settings?.clinicName || null;
+
   const handleNav = (id) => {
     onTab(id);
     if (isMobile) onClose?.();
@@ -76,25 +81,54 @@ export default function Sidebar({ user, activeTab, onTab, onLogout, onSearch, on
           background: "linear-gradient(180deg, rgba(99,102,241,0.12) 0%, transparent 100%)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 16 }}>
+            {/* Logo: custom de la clínica o fallback ZOVITA */}
             <div style={{
-              borderRadius: 14,
+              borderRadius: 14, flexShrink: 0,
               boxShadow: "0 0 0 1px rgba(99,102,241,0.3), 0 8px 24px rgba(99,102,241,0.35)",
+              overflow: "hidden",
+              width: 46, height: 46,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: clinicLogo ? "#fff" : "transparent",
             }}>
-              <VetOSLogo size={46} white hero />
+              {clinicLogo
+                ? <img src={clinicLogo} alt="logo" style={{ width: 46, height: 46, objectFit: "contain" }} />
+                : <VetOSLogo size={46} white hero />
+              }
             </div>
-            <div style={{ lineHeight: 1 }}>
-              <div style={{
-                fontSize: 22, fontWeight: 900, color: "#fff",
-                letterSpacing: "-0.04em", fontFamily: T.font,
-              }}>
-                Zo<span style={{ color: "#818CF8" }}>VITA</span>
-              </div>
-              <div style={{
-                fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.28)",
-                letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 3,
-              }}>
-                Platform
-              </div>
+            <div style={{ lineHeight: 1, minWidth: 0 }}>
+              {clinicName ? (
+                <>
+                  <div style={{
+                    fontSize: clinicName.length > 16 ? 14 : 18,
+                    fontWeight: 900, color: "#fff",
+                    letterSpacing: "-0.03em", fontFamily: T.font,
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 148,
+                  }}>
+                    {clinicName}
+                  </div>
+                  <div style={{
+                    fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.28)",
+                    letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 3,
+                  }}>
+                    powered by Zo<span style={{ color: "rgba(129,140,248,0.7)" }}>VITA</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{
+                    fontSize: 22, fontWeight: 900, color: "#fff",
+                    letterSpacing: "-0.04em", fontFamily: T.font,
+                  }}>
+                    Zo<span style={{ color: "#818CF8" }}>VITA</span>
+                  </div>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.28)",
+                    letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 3,
+                  }}>
+                    Platform
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

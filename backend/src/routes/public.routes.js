@@ -38,8 +38,7 @@ router.get("/info/:tenantId", async (req, res, next) => {
   try {
     const settings = await ClinicSettings.find(req.params.tenantId);
     if (!settings) return res.status(404).json({ message: "Clínica no encontrada." });
-    const { logoBase64, ...rest } = settings;
-    res.json({ ...rest, hasLogo: !!logoBase64 });
+    res.json(settings);
   } catch (err) { next(err); }
 });
 

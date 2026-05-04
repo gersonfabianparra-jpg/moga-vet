@@ -26,7 +26,7 @@ const APPT_TYPES = [
 const EMPTY_PET = { name:"", species:"Perro", breed:"", gender:"Hembra", age:"", weight:"" };
 
 export default function ClientPortal() {
-  const { currentUser, pets, records, grooming, vaccines, payments, appointments, logout, addAppointment, addPet } = useApp();
+  const { currentUser, pets, records, grooming, vaccines, payments, appointments, settings, logout, addAppointment, addPet } = useApp();
   const [tab, setTab]         = useState("pets");
   const [selPet, setSelPet]   = useState(null);
   const [bookModal, setBookModal] = useState(false);
@@ -88,9 +88,15 @@ export default function ClientPortal() {
       {/* Header */}
       <div style={{ background:T.sb, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 36px", height:64, boxShadow:"0 2px 20px rgba(0,0,0,0.2)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <VetOSLogo size={28} white />
+          {settings?.logoBase64
+            ? <img src={settings.logoBase64} alt="logo"
+                style={{ height:32, width:32, objectFit:"contain", borderRadius:8, background:"rgba(255,255,255,0.95)", padding:2, flexShrink:0 }} />
+            : <VetOSLogo size={28} white />
+          }
           <div style={{ width:1, height:18, background:"rgba(255,255,255,0.15)", margin:"0 4px" }}/>
-          <span style={{ fontSize:12, color:"rgba(255,255,255,0.45)", letterSpacing:"0.1em", textTransform:"uppercase", fontWeight:600 }}>Portal Cliente</span>
+          <span style={{ fontSize:13, color:"#fff", fontWeight:700, fontFamily:T.font }}>
+            {settings?.clinicName || <span>Zo<span style={{ color:"#818CF8" }}>VITA</span></span>}
+          </span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <Avatar name={currentUser.name} size={34} bg={T.gold}/>
