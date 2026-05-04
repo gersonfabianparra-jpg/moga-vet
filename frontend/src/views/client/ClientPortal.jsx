@@ -35,9 +35,10 @@ export default function ClientPortal() {
   const [form, setForm]       = useState({ petId: pets[0]?.id || "", date:"", time:"10:00", type:"consulta", notes:"" });
 
   // Registro de nueva mascota dentro del modal de cita
-  const [newPetMode, setNewPetMode] = useState(false);
+  const [newPetMode, setNewPetMode] = useState(pets.length === 0);
   const [petForm, setPetForm]       = useState(EMPTY_PET);
   const [petErr, setPetErr]         = useState("");
+  const [bookError, setBookError]   = useState("");
 
   const myVaxAlert = vaccines.filter((v) => vaxStatus(v.nextDue).key !== "green");
   const myPayPend  = payments.filter((p) => p.status === "pendiente");
@@ -48,9 +49,9 @@ export default function ClientPortal() {
     if (!form.date || saving) return;
     if (newPetMode && !petForm.name) { setPetErr("El nombre de la mascota es obligatorio."); return; }
     if (!newPetMode && !form.petId)  return;
-    setSaving(true); setPetErr("");
+    setSaving(true); setPetErr(""); setBookError("");
     try {
-      let petId = +form.petId;
+      let petId = form.petId ? +form.petId : null;
       if (newPetMode) {
         const nuevaMascota = await addPet({
           ...petForm,
@@ -75,8 +76,10 @@ export default function ClientPortal() {
       setTimeout(() => {
         setBooked(false); setBookModal(false);
         setForm({ petId: pets[0]?.id || "", date:"", time:"10:00", type:"consulta", notes:"" });
-        setNewPetMode(false); setPetForm(EMPTY_PET);
+        setNewPetMode(pets.length === 0); setPetForm(EMPTY_PET);
       }, 2500);
+    } catch {
+      setBookError("No se pudo enviar la solicitud. Verifica tu conexión e intenta de nuevo.");
     } finally { setSaving(false); }
   };
 
@@ -244,35 +247,47 @@ export default function ClientPortal() {
           </div>
         )}
 
-        {tab === "grooming" && (
-          grooming.length === 0
+        {tab === "grooming" && (() => {
+          const myGroomAppts = appointments
+            .filter((a) => a.type === "peluqueria" && a.clientId === currentUser.id)
+            .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+          const statusColor = { pendiente:{ bg:T.amber, color:T.amberText }, confirmada:{ bg:T.green, color:T.greenText }, completada:{ bg:T.blue, color:T.blueText }, cancelada:{ bg:T.red, color:T.redText } };
+          return myGroomAppts.length === 0
             ? <div style={{ textAlign:"center", padding:60, color:T.textMuted, background:T.panel, borderRadius:16 }}>
                 <div style={{ fontSize:52, marginBottom:12 }}>✂️</div>
-                <div>No tienes citas agendadas.</div>
-                <Btn v="accent" style={{ marginTop:18 }} onClick={() => setBookModal(true)}>Agendar mi primera cita</Btn>
+                <div style={{ marginBottom:16 }}>No tienes citas de peluquería agendadas.</div>
+                <Btn v="accent" onClick={() => { setForm({ ...form, type:"peluqueria" }); setBookModal(true); }}>Agendar servicio de peluquería</Btn>
               </div>
             : <div style={{ display:"grid", gap:12 }}>
-                {[...grooming].sort((a,b) => a.date.localeCompare(b.date)).map((g) => {
-                  const pet = pets.find((p) => p.id === g.petId);
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                  <div style={{ fontSize:16, fontWeight:800, color:T.text }}>Mis citas de peluquería</div>
+                  <Btn v="accent" style={{ padding:"8px 18px" }} onClick={() => { setForm({ ...form, type:"peluqueria" }); setBookModal(true); }}>+ Agendar</Btn>
+                </div>
+                {myGroomAppts.map((a) => {
+                  const pet = pets.find((p) => p.id === a.petId);
+                  const sc  = statusColor[a.status] || statusColor.pendiente;
+                  const isPast = a.date < new Date().toISOString().slice(0,10);
                   return (
-                    <div key={g.id} style={{ background:T.panel, borderRadius:14, boxShadow:T.sm, border:`1px solid ${T.border}`, padding:"18px 22px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div key={a.id} style={{ background:T.panel, borderRadius:14, boxShadow:T.sm, border:`1px solid ${T.border}`, padding:"18px 22px", display:"flex", justifyContent:"space-between", alignItems:"center", opacity: isPast ? 0.65 : 1 }}>
                       <div style={{ display:"flex", gap:14, alignItems:"center" }}>
-                        <div style={{ width:50, height:50, borderRadius:14, background:`linear-gradient(135deg,${T.brand},${T.brandMid})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24 }}>{spIcon(pet?.species)}</div>
+                        <div style={{ width:50, height:50, borderRadius:14, background:`linear-gradient(135deg,#F59E0B,#D97706)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24 }}>✂️</div>
                         <div>
-                          <div style={{ fontSize:15, fontWeight:800, color:T.text }}>{pet?.name}</div>
-                          <div style={{ fontSize:13, color:T.textMuted, marginTop:2 }}>{g.service}</div>
+                          <div style={{ fontSize:15, fontWeight:800, color:T.text }}>{pet?.name || "—"}</div>
+                          <div style={{ fontSize:13, color:T.textMuted, marginTop:2 }}>✂️ Peluquería{a.notes ? ` · ${a.notes}` : ""}</div>
                         </div>
                       </div>
                       <div style={{ textAlign:"right" }}>
-                        <div style={{ fontWeight:700, marginBottom:6 }}>📅 {fmtDate(g.date)} · {g.time}</div>
-                        <div style={{ marginBottom:6 }}><StatusBadge status={g.status}/></div>
-                        <div style={{ fontSize:15, fontWeight:800, color:T.brand }}>{fmtCLP(g.price)}</div>
+                        <div style={{ fontWeight:700, marginBottom:6 }}>📅 {fmtDate(a.date)} · {a.time}</div>
+                        <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:20, background:sc.bg, color:sc.color, fontSize:12, fontWeight:600 }}>
+                          {a.status.charAt(0).toUpperCase() + a.status.slice(1)}
+                        </span>
+                        {a.status === "pendiente" && <div style={{ fontSize:11, color:T.textMuted, marginTop:6 }}>La clínica confirmará tu cita pronto.</div>}
                       </div>
                     </div>
                   );
                 })}
-              </div>
-        )}
+              </div>;
+        })()}
 
         {/* Pagos */}
         {tab === "payments" && (
@@ -411,8 +426,13 @@ export default function ClientPortal() {
                 <Input label="Hora preferida"  type="time" value={form.time} onChange={(e) => setForm({...form, time:e.target.value})}/>
               </div>
               <Input label="Notas o instrucciones" value={form.notes} onChange={(e) => setForm({...form, notes:e.target.value})} placeholder="Ej: síntomas, alergias, instrucciones especiales…"/>
+              {bookError && (
+                <div style={{ fontSize:13, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:10, padding:"10px 14px", marginBottom:4 }}>
+                  ⚠ {bookError}
+                </div>
+              )}
               <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
-                <Btn v="ghost" onClick={() => { setBookModal(false); setNewPetMode(false); setPetForm(EMPTY_PET); setPetErr(""); }}>Cancelar</Btn>
+                <Btn v="ghost" onClick={() => { setBookModal(false); setNewPetMode(pets.length === 0); setPetForm(EMPTY_PET); setPetErr(""); setBookError(""); }}>Cancelar</Btn>
                 <Btn v="accent" onClick={book} disabled={saving || (!newPetMode && !form.petId) || !form.date}>
                   {saving ? "Enviando…" : "Solicitar cita →"}
                 </Btn>

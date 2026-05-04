@@ -128,7 +128,7 @@ function GroomingPhotoSection({ grooming, petId }) {
 }
 
 export default function GroomingView() {
-  const { grooming, pets, users, settings, addGrooming, updateGroomingStatus } = useApp();
+  const { grooming, pets, users, settings, appointments, addGrooming, updateGroomingStatus, updateAppointment } = useApp();
   const { isMobile } = useBreakpoint();
   const [view, setView]       = useState("calendar");
   const [filter, setFilter]   = useState("todas");
@@ -139,6 +139,12 @@ export default function GroomingView() {
   const [form, setForm]       = useState(EMPTY);
 
   const clients = users.filter((u) => u.role === "client");
+
+  // Solicitudes de peluquería hechas por clientes registrados (vienen de la tabla appointments)
+  const clientGroomAppts = appointments
+    .filter((a) => a.type === "peluqueria" && a.clientId && !a.guestName)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+
   const display = (filter === "todas" ? grooming : grooming.filter((g) => g.status === filter))
     .sort((a, b) => a.date.localeCompare(b.date));
   const days = calDays(calYear, calMonth);
@@ -168,6 +174,65 @@ export default function GroomingView() {
           <Btn v="accent" onClick={() => setModal(true)}>+ Agendar</Btn>
         </div>
       }/>
+
+      {/* ── Solicitudes de peluquería de clientes registrados ──────────────── */}
+      {clientGroomAppts.length > 0 && (
+        <div style={{ background:T.panel, borderRadius:16, border:`1.5px solid #F59E0B`, boxShadow:T.sm, padding:"18px 22px", marginBottom:24 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+            <div style={{ fontSize:20 }}>✂️</div>
+            <div>
+              <div style={{ fontSize:14, fontWeight:800, color:T.text }}>Solicitudes de peluquería</div>
+              <div style={{ fontSize:12, color:T.textMuted }}>Citas agendadas por clientes registrados — {clientGroomAppts.filter(a=>a.status==="pendiente").length} pendiente{clientGroomAppts.filter(a=>a.status==="pendiente").length!==1?"s":""}</div>
+            </div>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {clientGroomAppts.map((a) => {
+              const pet    = pets.find((p) => p.id === a.petId);
+              const client = users.find((u) => u.id === a.clientId);
+              const ST = { pendiente:{bg:"#FEF3C7",color:"#92400E"}, confirmada:{bg:"#D1FAE5",color:"#065F46"}, completada:{bg:"#DBEAFE",color:"#1E40AF"}, cancelada:{bg:"#FEE2E2",color:"#991B1B"} };
+              const sc = ST[a.status] || ST.pendiente;
+              return (
+                <div key={a.id} style={{ background:T.appBg, borderRadius:12, border:`1px solid ${T.border}`, padding:"14px 18px", display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
+                  <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg,#F59E0B,#D97706)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>
+                    {spIcon(pet?.species)}
+                  </div>
+                  <div style={{ flex:1, minWidth:150 }}>
+                    <div style={{ fontSize:14, fontWeight:800, color:T.text }}>{pet?.name || "Mascota desconocida"}</div>
+                    <div style={{ fontSize:12, color:T.textMuted, marginTop:2 }}>
+                      👤 {client?.name || "Cliente"}{pet?.breed ? ` · ${pet.breed}` : ""}
+                    </div>
+                    {a.notes && <div style={{ fontSize:12, color:T.textMuted, fontStyle:"italic", marginTop:2 }}>📝 {a.notes}</div>}
+                  </div>
+                  <div style={{ textAlign:"right", flexShrink:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:6 }}>📅 {a.date} · {a.time}</div>
+                    <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:20, background:sc.bg, color:sc.color, fontSize:12, fontWeight:700 }}>
+                      {a.status.charAt(0).toUpperCase()+a.status.slice(1)}
+                    </span>
+                  </div>
+                  {a.status === "pendiente" && (
+                    <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+                      <button onClick={() => updateAppointment(a.id, { status:"confirmada" })}
+                        style={{ padding:"6px 14px", borderRadius:8, border:"none", cursor:"pointer", background:"#D1FAE5", color:"#065F46", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                        ✓ Confirmar
+                      </button>
+                      <button onClick={() => updateAppointment(a.id, { status:"cancelada" })}
+                        style={{ padding:"6px 14px", borderRadius:8, border:"none", cursor:"pointer", background:"#FEE2E2", color:"#991B1B", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                        ✗ Cancelar
+                      </button>
+                    </div>
+                  )}
+                  {a.status === "confirmada" && (
+                    <button onClick={() => updateAppointment(a.id, { status:"completada" })}
+                      style={{ padding:"6px 14px", borderRadius:8, border:"none", cursor:"pointer", background:"#DBEAFE", color:"#1E40AF", fontSize:12, fontWeight:700, fontFamily:T.font, flexShrink:0 }}>
+                      ✓ Completar
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {view === "calendar" && (
         <div style={{ background:T.panel, borderRadius:16, boxShadow:T.md, border:`1px solid ${T.border}`, overflow:"hidden" }}>

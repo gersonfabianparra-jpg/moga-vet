@@ -24,7 +24,9 @@ export const getById = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const pet = await Pet.create({ ...req.body, tenantId: req.user.tenantId });
+    const overrides = { tenantId: req.user.tenantId };
+    if (req.user.role === "client") overrides.ownerId = req.user.id;
+    const pet = await Pet.create({ ...req.body, ...overrides });
     res.status(201).json(pet);
   } catch (err) {
     next(err);
