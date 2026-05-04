@@ -152,7 +152,9 @@ export default function GroomingView() {
 
   const getAppts = (day) => {
     const ds = `${calYear}-${String(calMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-    return grooming.filter((g) => g.date === ds);
+    const groomEntries   = grooming.filter((g) => g.date === ds).map((g) => ({ ...g, _src: "grooming" }));
+    const clientEntries  = clientGroomAppts.filter((a) => a.date === ds).map((a) => ({ ...a, _src: "client" }));
+    return [...groomEntries, ...clientEntries].sort((a, b) => (a.time || "").localeCompare(b.time || ""));
   };
 
   const save = async () => {
@@ -253,21 +255,47 @@ export default function GroomingView() {
                 return (
                   <div key={day} style={{ borderRadius:10, padding:"8px 7px", minHeight:86, background:isT?`${T.brand}10`:T.appBg, border:isT?`2px solid ${T.brand}`:`1px solid ${T.border}` }}>
                     <div style={{ fontSize:13, fontWeight:isT?800:500, color:isT?"#fff":T.text, background:isT?T.brand:"transparent", width:24, height:24, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:4 }}>{day}</div>
-                    {appts.map((a) => { const pet=pets.find((p)=>p.id===a.petId); const col=ST_COLORS[a.status]||"#94a3b8"; return (
-                      <div key={a.id} title={`${pet?.name} — ${a.service}`} style={{ fontSize:10, background:`${col}18`, borderLeft:`3px solid ${col}`, borderRadius:"0 5px 5px 0", padding:"2px 5px", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontWeight:600, color:col }}>
-                        {a.time} {pet?.name}
-                      </div>
-                    );})}
+                    {appts.map((a) => {
+                      const pet    = pets.find((p) => p.id === a.petId);
+                      const client = users.find((u) => u.id === a.clientId);
+                      const col    = ST_COLORS[a.status] || "#94a3b8";
+                      const isClient = a._src === "client";
+                      return (
+                        <div
+                          key={`${a._src}-${a.id}`}
+                          title={isClient
+                            ? `📱 Solicitud cliente · ${pet?.name || "—"} · ${client?.name || "—"} · ${a.status}`
+                            : `${pet?.name || "—"} · ${a.service || ""}`}
+                          style={{
+                            fontSize:10, fontWeight:700, color:col,
+                            background:`${col}18`,
+                            borderLeft:`3px solid ${col}`,
+                            borderRadius:"0 5px 5px 0",
+                            padding:"2px 5px", marginBottom:2,
+                            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                            opacity: isClient ? 1 : 1,
+                            outline: isClient ? `1.5px dashed ${col}` : "none",
+                            outlineOffset: -1,
+                          }}
+                        >
+                          {isClient ? "📱 " : ""}{a.time} {pet?.name || "—"}
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
             </div>
-            <div style={{ display:"flex", gap:14, marginTop:14, paddingTop:14, borderTop:`1px solid ${T.border}` }}>
+            <div style={{ display:"flex", gap:14, marginTop:14, paddingTop:14, borderTop:`1px solid ${T.border}`, flexWrap:"wrap", alignItems:"center" }}>
               {[ ["confirmada","#22c55e"],["pendiente","#f59e0b"],["completada","#94a3b8"],["cancelada","#ef4444"] ].map(([s,col]) => (
                 <div key={s} style={{ display:"flex", alignItems:"center", gap:6, fontSize:12 }}>
                   <div style={{ width:3, height:14, borderRadius:2, background:col }}/><span style={{ color:T.textMuted, textTransform:"capitalize" }}>{s}</span>
                 </div>
               ))}
+              <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, marginLeft:"auto" }}>
+                <span style={{ fontSize:11 }}>📱</span>
+                <span style={{ color:T.textMuted, fontStyle:"italic" }}>= solicitud de cliente (borde punteado)</span>
+              </div>
             </div>
           </div>
         </div>
