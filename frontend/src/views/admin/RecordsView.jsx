@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../../context/AppContext.jsx";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import api from "../../services/api.js";
 import T from "../../styles/tokens.js";
 import { fmtDate, spIcon } from "../../styles/helpers.js";
@@ -96,6 +97,7 @@ function LockScreen({ onUnlock }) {
 // ── Vista principal ───────────────────────────────────────────────────────────
 export default function RecordsView() {
   const { records, pets, users, addRecord, recordsLoaded } = useApp();
+  const { isMobile } = useBreakpoint();
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(UNLOCK_KEY) === "1");
   const [search, setSearch]     = useState("");
   const [petFilter, setPetFilter] = useState("");
@@ -122,7 +124,7 @@ export default function RecordsView() {
   };
 
   return (
-    <div style={{ padding:"0 36px 36px" }}>
+    <div style={{ padding: isMobile ? "0 14px 32px" : "0 36px 36px" }}>
       <PageTitle icon="📋" title="Fichas médicas"
         sub={recordsLoaded ? `${records.length} registros clínicos` : "Cargando fichas…"}
         action={<Btn v="accent" onClick={() => setModal(true)}>+ Nueva ficha</Btn>}/>
@@ -140,7 +142,7 @@ export default function RecordsView() {
           <input value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por mascota o diagnóstico…" className="moga-input"
             style={{ padding:"10px 14px 10px 36px", border:`1.5px solid ${T.border}`, borderRadius:10,
-              fontSize:14, color:T.text, background:T.panel, fontFamily:T.font, width:280 }}/>
+              fontSize:14, color:T.text, background:T.panel, fontFamily:T.font, width: isMobile ? "100%" : 280 }}/>
         </div>
         <select value={petFilter} onChange={(e) => setPetFilter(e.target.value)} className="moga-input"
           style={{ padding:"10px 14px", border:`1.5px solid ${T.border}`, borderRadius:10,

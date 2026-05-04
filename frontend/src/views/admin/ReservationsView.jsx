@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../../context/AppContext.jsx";
 import { useNotify } from "../../context/NotificationContext.jsx";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import T from "../../styles/tokens.js";
 import PageTitle from "../../components/layout/PageTitle.jsx";
 import Btn from "../../components/ui/Btn.jsx";
@@ -31,6 +32,7 @@ function fmtDate(iso) {
 export default function ReservationsView() {
   const { appointments, updateAppointment, removeAppointment, currentUser } = useApp();
   const notify = useNotify();
+  const { isMobile } = useBreakpoint();
 
   const tenantId  = currentUser?.tenantId || "";
   const origin    = typeof window !== "undefined" ? window.location.origin : "";
@@ -81,7 +83,7 @@ export default function ReservationsView() {
   };
 
   return (
-    <div style={{ padding: "28px 32px 48px", fontFamily: T.font, maxWidth: 960 }}>
+    <div style={{ padding: isMobile ? "14px 14px 48px" : "28px 32px 48px", fontFamily: T.font, maxWidth: 960 }}>
       <PageTitle icon="📋" title="Reservas online" sub="Solicitudes de clientes sin cuenta registrada" />
 
       {/* Enlace de reservas */}
@@ -116,7 +118,7 @@ export default function ReservationsView() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14, marginBottom: 24 }}>
         {[
           { label: "Pendientes",  value: appointments.filter((a) => a.guestName && a.status === "pendiente").length,  color: "#F59E0B" },
           { label: "Confirmadas", value: appointments.filter((a) => a.guestName && a.status === "confirmada").length, color: "#10B981" },

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "../../context/AppContext.jsx";
 import { useNotify } from "../../context/NotificationContext.jsx";
+import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import T from "../../styles/tokens.js";
 import { fmtDate, spIcon } from "../../styles/helpers.js";
 import Modal from "../../components/ui/Modal.jsx";
@@ -111,6 +112,7 @@ export default function AppointmentsView() {
 
   const gridRef = useRef(null);
 
+  const { isMobile } = useBreakpoint();
   const HOUR_H   = Math.round(BASE_HOUR_H * zoom);
   const TOTAL_H  = HOUR_END * HOUR_H;
   const isAdmin  = currentUser?.role === "admin" || currentUser?.role === "vet" || currentUser?.role === "superadmin";
@@ -258,11 +260,11 @@ export default function AppointmentsView() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: "28px 32px 48px", fontFamily: T.font }}>
+    <div style={{ padding: isMobile ? "14px 14px 48px" : "28px 32px 48px", fontFamily: T.font }}>
       <PageTitle icon="🗓" title="Agenda" sub={`${weekAppts.length} cita${weekAppts.length !== 1 ? "s" : ""} esta semana`} />
 
       {/* KPI strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3,1fr)", gap: 14, marginBottom: 24 }}>
         {[
           { label: "Hoy",          value: todayAppts.length,   icon: "📅", color: T.brand },
           { label: "Pendientes",   value: pendingAppts.length, icon: "⏳", color: "#F59E0B" },
@@ -279,11 +281,11 @@ export default function AppointmentsView() {
       </div>
 
       {/* Controles */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "center", justifyContent: "space-between", marginBottom: 16, gap: 10 }}>
         {/* Navegación semana */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: isMobile ? "center" : "flex-start" }}>
           <button onClick={prevWeek} style={navBtn}>‹</button>
-          <div style={{ fontSize: 15, fontWeight: 700, color: T.text, minWidth: 220, textAlign: "center" }}>
+          <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: T.text, minWidth: isMobile ? 160 : 220, textAlign: "center" }}>
             {formatWeekRange(weekStart)}
           </div>
           <button onClick={nextWeek} style={navBtn}>›</button>
@@ -291,24 +293,26 @@ export default function AppointmentsView() {
         </div>
 
         {/* Zoom + bloqueo + nueva cita */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Zoom */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: `1px solid ${T.border}`, borderRadius: 10, padding: "4px 10px" }}>
-            <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 600 }}>Vista</span>
-            {ZOOM_OPTS.map((z) => (
-              <button
-                key={z.value}
-                onClick={() => setZoom(z.value)}
-                style={{
-                  padding: "4px 9px", borderRadius: 6, border: "none", cursor: "pointer",
-                  fontSize: 11, fontWeight: 600, fontFamily: T.font,
-                  background: zoom === z.value ? T.brand : "transparent",
-                  color: zoom === z.value ? "#fff" : T.textMuted,
-                  transition: "all 0.15s",
-                }}
-              >{z.label}</button>
-            ))}
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {/* Zoom — oculto en móvil para ahorrar espacio */}
+          {!isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: `1px solid ${T.border}`, borderRadius: 10, padding: "4px 10px" }}>
+              <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 600 }}>Vista</span>
+              {ZOOM_OPTS.map((z) => (
+                <button
+                  key={z.value}
+                  onClick={() => setZoom(z.value)}
+                  style={{
+                    padding: "4px 9px", borderRadius: 6, border: "none", cursor: "pointer",
+                    fontSize: 11, fontWeight: 600, fontFamily: T.font,
+                    background: zoom === z.value ? T.brand : "transparent",
+                    color: zoom === z.value ? "#fff" : T.textMuted,
+                    transition: "all 0.15s",
+                  }}
+                >{z.label}</button>
+              ))}
+            </div>
+          )}
 
           {/* Bloquear horarios (solo staff) */}
           {isAdmin && (
@@ -323,7 +327,7 @@ export default function AppointmentsView() {
               }}
               title="Activar modo bloqueo de horarios"
             >
-              🔒 {blockMode ? "Modo bloqueo activo" : "Bloquear horario"}
+              🔒 {blockMode ? "Activo" : "Bloquear"}
             </button>
           )}
 
@@ -415,7 +419,8 @@ export default function AppointmentsView() {
       </div>
 
       {/* Calendario */}
-      <div style={{ background: T.panel, borderRadius: 16, boxShadow: T.md, border: `1px solid ${T.border}`, overflow: "hidden" }}>
+      <div style={{ overflowX: "auto", borderRadius: 16, boxShadow: T.md, border: `1px solid ${T.border}` }}>
+      <div style={{ background: T.panel, minWidth: isMobile ? 560 : "auto", overflow: "hidden" }}>
 
         {/* Header días */}
         <div style={{ display: "grid", gridTemplateColumns: "56px repeat(7,1fr)", borderBottom: `1px solid ${T.border}`, position: "sticky", top: 0, zIndex: 20, background: T.panel }}>
@@ -656,6 +661,7 @@ export default function AppointmentsView() {
           </div>
         </div>
       </div>
+      </div>
 
       {/* ── Modal crear/editar cita ──────────────────────────────────────── */}
       {modal && (
@@ -664,7 +670,7 @@ export default function AppointmentsView() {
           sub={modal.mode === "create" ? "Completa los datos para agendar" : "Modifica los datos de la cita"}
           onClose={closeModal}
         >
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "0 16px" }}>
             <Select label="Tipo *" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
               {Object.entries(TYPE_CFG).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
             </Select>
@@ -686,7 +692,7 @@ export default function AppointmentsView() {
             {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: "0 16px" }}>
             <Input label="Fecha *"   type="date" value={form.date}     onChange={(e) => setForm({ ...form, date: e.target.value })} />
             <Input label="Hora *"    type="time" value={form.time}     onChange={(e) => setForm({ ...form, time: e.target.value })} />
             <Select label="Duración" value={form.duration} onChange={(e) => setForm({ ...form, duration: +e.target.value })}>

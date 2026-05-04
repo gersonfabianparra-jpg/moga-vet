@@ -43,13 +43,13 @@ export default function PaymentsView() {
     <div style={{ padding: isMobile ? "0 14px 32px" : "0 36px 36px" }}>
       <PageTitle icon="💳" title="Historial de pagos" sub={`${payments.length} transacciones registradas`} action={<Btn v="accent" onClick={() => setModal(true)}>+ Registrar pago</Btn>}/>
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:22 }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap:14, marginBottom:22 }}>
         <KpiCard label="Total facturado"   value={fmtCLP(total)}      icon="🧾" gradient="linear-gradient(135deg,#1e3a5f,#2563eb)"           delay="2"/>
         <KpiCard label="Ingresos recibidos" value={fmtCLP(totalPaid)} icon="✅" gradient={`linear-gradient(135deg,${T.brand},${T.brandMid})`} delay="3"/>
         <KpiCard label="Pendiente de cobro" value={fmtCLP(totalPend)} icon="⏳" gradient={`linear-gradient(135deg,#78350f,${T.gold})`}        delay="4"/>
       </div>
 
-      <div style={{ display:"flex", gap:10, marginBottom:18 }}>
+      <div style={{ display:"flex", gap:10, marginBottom:18, flexWrap:"wrap" }}>
         <select value={catF} onChange={(e) => setCatF(e.target.value)} className="moga-input" style={{ padding:"9px 12px", border:`1.5px solid ${T.border}`, borderRadius:10, fontSize:14, color:T.text, background:T.panel, fontFamily:T.font }}>
           <option value="">Todas las categorías</option>
           {PAY_CATS.map((c) => <option key={c}>{c}</option>)}

@@ -33,6 +33,11 @@ const Tenant = {
     if (error) throw error;
     return data;
   },
+  delete: async (id) => {
+    if (useLocal()) { store.tenants.items = (store.tenants.items || []).filter((t) => t.id !== id); return; }
+    const { error } = await supabase.from("tenants").delete().eq("id", id);
+    if (error) throw error;
+  },
 };
 
 export default Tenant;

@@ -138,6 +138,8 @@ export default function GroomingView() {
   const [calMonth, setCalMonth] = useState(NOW.getMonth());
   const [form, setForm]       = useState(EMPTY);
 
+  const [calDetail, setCalDetail] = useState(null); // cita seleccionada en el calendario
+
   const clients = users.filter((u) => u.role === "client");
 
   // Solicitudes de peluquería desde appointments:
@@ -274,6 +276,7 @@ export default function GroomingView() {
                       return (
                         <div
                           key={`${a._src}-${a.id}`}
+                          onClick={(e) => { e.stopPropagation(); setCalDetail({ appt:a, pet, client }); }}
                           title={isClient
                             ? `📱 ${a.guestName || client?.name || "—"} · ${displayName} · ${a.status}`
                             : `${pet?.name || "—"} · ${a.service || ""}`}
@@ -284,7 +287,7 @@ export default function GroomingView() {
                             borderRadius:"0 5px 5px 0",
                             padding:"2px 5px", marginBottom:2,
                             overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-                            opacity: isClient ? 1 : 1,
+                            cursor:"pointer",
                             outline: isClient ? `1.5px dashed ${col}` : "none",
                             outlineOffset: -1,
                           }}
@@ -384,6 +387,74 @@ export default function GroomingView() {
           </div>
         </div>
       )}
+
+      {/* Modal detalle calendario */}
+      {calDetail && (() => {
+        const { appt: a, pet, client } = calDetail;
+        const isClient = a._src === "client";
+        const ST = { confirmada:{bg:"#D1FAE5",color:"#065F46"}, pendiente:{bg:"#FEF3C7",color:"#92400E"}, completada:{bg:"#DBEAFE",color:"#1E40AF"}, cancelada:{bg:"#FEE2E2",color:"#991B1B"} };
+        const sc = ST[a.status] || ST.pendiente;
+        const displayName = a.guestPetName || pet?.name || "—";
+        const ownerName   = a.guestName    || client?.name || "—";
+        return (
+          <Modal title={`${isClient ? "📱 " : "✂️ "}Detalle de cita`} onClose={() => setCalDetail(null)}>
+            <div style={{ background:"#EEF2FF", borderRadius:12, padding:"14px 18px", marginBottom:16 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6px 16px", fontSize:13 }}>
+                <div><span style={{ fontWeight:700, color:"#4338CA" }}>Fecha:</span> <span style={{ color:"#334155" }}>{a.date}</span></div>
+                <div><span style={{ fontWeight:700, color:"#4338CA" }}>Hora:</span> <span style={{ color:"#334155" }}>{a.time}</span></div>
+                <div><span style={{ fontWeight:700, color:"#4338CA" }}>Mascota:</span> <span style={{ color:"#334155" }}>{displayName}{pet?.breed ? ` (${pet.breed})` : ""}</span></div>
+                <div><span style={{ fontWeight:700, color:"#4338CA" }}>Dueño:</span> <span style={{ color:"#334155" }}>{ownerName}</span></div>
+                {!isClient && a.service && <div><span style={{ fontWeight:700, color:"#4338CA" }}>Servicio:</span> <span style={{ color:"#334155" }}>{a.service}</span></div>}
+                {!isClient && a.price   && <div><span style={{ fontWeight:700, color:"#4338CA" }}>Precio:</span> <span style={{ color:"#334155" }}>{fmtCLP(a.price)}</span></div>}
+                {isClient && a.guestPhone && <div><span style={{ fontWeight:700, color:"#4338CA" }}>Teléfono:</span> <span style={{ color:"#334155" }}>{a.guestPhone}</span></div>}
+                {isClient && a.guestEmail && <div><span style={{ fontWeight:700, color:"#4338CA" }}>Email:</span> <span style={{ color:"#334155" }}>{a.guestEmail}</span></div>}
+                {a.notes && <div style={{ gridColumn:"span 2" }}><span style={{ fontWeight:700, color:"#4338CA" }}>Notas:</span> <span style={{ color:"#334155", fontStyle:"italic" }}>{a.notes}</span></div>}
+              </div>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <span style={{ padding:"4px 12px", borderRadius:20, fontSize:12, fontWeight:700, background:sc.bg, color:sc.color }}>
+                {a.status.charAt(0).toUpperCase() + a.status.slice(1)}
+              </span>
+              {isClient && a.status === "pendiente" && (
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={() => { updateAppointment(a.id, { status:"confirmada" }); setCalDetail(null); }}
+                    style={{ padding:"7px 16px", borderRadius:8, border:"none", cursor:"pointer", background:"#D1FAE5", color:"#065F46", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                    ✓ Confirmar
+                  </button>
+                  <button onClick={() => { updateAppointment(a.id, { status:"cancelada" }); setCalDetail(null); }}
+                    style={{ padding:"7px 16px", borderRadius:8, border:"none", cursor:"pointer", background:"#FEE2E2", color:"#991B1B", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                    ✗ Cancelar
+                  </button>
+                </div>
+              )}
+              {isClient && a.status === "confirmada" && (
+                <button onClick={() => { updateAppointment(a.id, { status:"completada" }); setCalDetail(null); }}
+                  style={{ padding:"7px 16px", borderRadius:8, border:"none", cursor:"pointer", background:"#DBEAFE", color:"#1E40AF", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                  ✓ Marcar completada
+                </button>
+              )}
+              {!isClient && a.status === "pendiente" && (
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={() => { updateGroomingStatus(a.id, "confirmada"); setCalDetail(null); }}
+                    style={{ padding:"7px 16px", borderRadius:8, border:"none", cursor:"pointer", background:"#D1FAE5", color:"#065F46", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                    ✓ Confirmar
+                  </button>
+                  <button onClick={() => { updateGroomingStatus(a.id, "cancelada"); setCalDetail(null); }}
+                    style={{ padding:"7px 16px", borderRadius:8, border:"none", cursor:"pointer", background:"#FEE2E2", color:"#991B1B", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                    ✗ Cancelar
+                  </button>
+                </div>
+              )}
+              {!isClient && a.status === "confirmada" && (
+                <button onClick={() => { updateGroomingStatus(a.id, "completada"); setCalDetail(null); }}
+                  style={{ padding:"7px 16px", borderRadius:8, border:"none", cursor:"pointer", background:"#DBEAFE", color:"#1E40AF", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                  ✓ Completar
+                </button>
+              )}
+            </div>
+          </Modal>
+        );
+      })()}
 
       {modal && (
         <Modal title="Agendar cita de peluquería" onClose={() => setModal(false)}>

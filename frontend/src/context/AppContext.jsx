@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useEffect } from "react";
+import api                       from "../services/api.js";
 import * as petsService          from "../services/pets.service.js";
 import * as recordsService       from "../services/records.service.js";
 
@@ -27,6 +28,9 @@ function readCache() {
 function writeCache(data) {
   try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() })); } catch {}
 }
+
+const SUPERADMIN_KEY = "moga_root_token";
+const SUPERADMIN_USER_KEY = "moga_root_user";
 
 const initialState = {
   currentUser: JSON.parse(localStorage.getItem("moga_user") || "null"),
@@ -78,6 +82,7 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     if (!state.currentUser) return;
+    if (state.currentUser.role === "superadmin") return; // superadmin gestiona su propio estado
     loadAll();
   }, [state.currentUser]);
 
@@ -130,8 +135,37 @@ export function AppProvider({ children }) {
   const logout = () => {
     localStorage.removeItem("moga_token");
     localStorage.removeItem("moga_user");
+    localStorage.removeItem(SUPERADMIN_KEY);
+    localStorage.removeItem(SUPERADMIN_USER_KEY);
     sessionStorage.removeItem(CACHE_KEY);
     dispatch({ type: "LOGOUT" });
+  };
+
+  const enterClinic = async (tenantId) => {
+    const res = await api.post(`/auth/impersonate/${tenantId}`);
+    const { token, user } = res.data;
+    // Guardar credenciales root para poder volver
+    localStorage.setItem(SUPERADMIN_KEY, localStorage.getItem("moga_token"));
+    localStorage.setItem(SUPERADMIN_USER_KEY, localStorage.getItem("moga_user"));
+    // Activar sesión de clínica
+    localStorage.setItem("moga_token", token);
+    localStorage.setItem("moga_user", JSON.stringify(user));
+    sessionStorage.removeItem(CACHE_KEY);
+    dispatch({ type: "LOGOUT" });
+    dispatch({ type: "SET_USER", payload: user });
+  };
+
+  const exitImpersonation = () => {
+    const rootToken = localStorage.getItem(SUPERADMIN_KEY);
+    const rootUser  = JSON.parse(localStorage.getItem(SUPERADMIN_USER_KEY) || "null");
+    if (!rootToken || !rootUser) { logout(); return; }
+    localStorage.setItem("moga_token", rootToken);
+    localStorage.setItem("moga_user", JSON.stringify(rootUser));
+    localStorage.removeItem(SUPERADMIN_KEY);
+    localStorage.removeItem(SUPERADMIN_USER_KEY);
+    sessionStorage.removeItem(CACHE_KEY);
+    dispatch({ type: "LOGOUT" });
+    dispatch({ type: "SET_USER", payload: rootUser });
   };
 
   const addPet = async (pet) => {
@@ -224,6 +258,7 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       ...state,
       login, logout, loadAll, updateProfile,
+      enterClinic, exitImpersonation,
       addPet, addRecord, updateRecord, addGrooming, updateGroomingStatus,
       addVaccine, addPayment, markPaid, addUser, updateUser, removeUser,
       addAppointment, updateAppointment, removeAppointment,

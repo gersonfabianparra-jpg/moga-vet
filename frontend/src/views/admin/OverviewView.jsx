@@ -31,6 +31,7 @@ export default function OverviewView() {
         background: `linear-gradient(135deg, ${T.sb} 0%, #162032 60%, #1a3347 100%)`,
         borderRadius: 20, padding: "28px 36px", marginBottom: 24,
         display: "flex", justifyContent: "space-between", alignItems: "center",
+        flexWrap: "wrap", gap: 16,
         position: "relative", overflow: "hidden",
         boxShadow: "0 12px 36px rgba(15,23,42,0.25)",
       }}>
@@ -85,7 +86,7 @@ export default function OverviewView() {
       )}
 
       {/* KPIs */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:24 }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap:14, marginBottom:24 }}>
         <KpiCard label="Mascotas registradas" value={pets.length}           icon="🐾" gradient={`linear-gradient(135deg,${T.brand},${T.brandMid})`}    delay="2"/>
         <KpiCard label="Clientes activos"      value={clients.length}        icon="👥" gradient="linear-gradient(135deg,#1e3a5f,#2563eb)"               delay="3"/>
         <KpiCard label="Ingresos totales"      value={fmtCLP(totalPaid)}    icon="💵" gradient={`linear-gradient(135deg,#78350f,${T.gold})`}             delay="4"/>
@@ -93,7 +94,7 @@ export default function OverviewView() {
       </div>
 
       {/* Tablas resumen */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:18 }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:18 }}>
 
         {/* Próximas citas */}
         <div style={{ background:T.panel, borderRadius:18, boxShadow:T.md, border:`1px solid ${T.border}`, overflow:"hidden" }}>

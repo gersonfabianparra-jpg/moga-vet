@@ -15,7 +15,7 @@ export function requireAuth(req, res, next) {
 
 export function requireAdmin(req, res, next) {
   requireAuth(req, res, () => {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "superadmin") {
       return res.status(403).json({ message: "Se requiere rol admin" });
     }
     next();
@@ -25,7 +25,7 @@ export function requireAdmin(req, res, next) {
 export function requireStaff(req, res, next) {
   requireAuth(req, res, () => {
     if (req.user.role === "client") {
-      return res.status(403).json({ message: "Acceso solo para personal MOGA" });
+      return res.status(403).json({ message: "Acceso solo para personal de la clínica" });
     }
     next();
   });

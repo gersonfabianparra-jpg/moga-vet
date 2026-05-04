@@ -70,7 +70,7 @@ function ProfileModal({ onClose }) {
 }
 
 export default function AdminDashboard() {
-  const { currentUser, logout, vaccines, payments, appointments, settings } = useApp();
+  const { currentUser, logout, vaccines, payments, appointments, settings, exitImpersonation } = useApp();
   const { isMobile } = useBreakpoint();
   const [tab, setTab]               = useState("overview");
   const [search, setSearch]         = useState(false);
@@ -95,7 +95,28 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div style={{ display:"flex", minHeight:"100vh", background:T.appBg, fontFamily:T.font }}>
+    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:T.appBg, fontFamily:T.font }}>
+
+      {/* Banner de impersonación */}
+      {currentUser?.impersonating && (
+        <div style={{
+          background:"linear-gradient(135deg,#7c3aed,#4f46e5)",
+          padding:"10px 24px", display:"flex", alignItems:"center", gap:14,
+          zIndex:200, flexShrink:0,
+        }}>
+          <span style={{ fontSize:13, fontWeight:700, color:"#fff", flex:1 }}>
+            Administrando como superadmin: <strong>{currentUser.impersonatingClinic}</strong>
+          </span>
+          <button
+            onClick={exitImpersonation}
+            style={{ fontSize:12, fontWeight:700, padding:"6px 16px", borderRadius:8, border:"2px solid rgba(255,255,255,0.4)", background:"transparent", color:"#fff", cursor:"pointer", fontFamily:T.font }}
+          >
+            ← Volver a ZOVITA
+          </button>
+        </div>
+      )}
+
+      <div style={{ display:"flex", flex:1, minHeight:0 }}>
       <Sidebar
         user={currentUser}
         activeTab={tab}
@@ -147,6 +168,7 @@ export default function AdminDashboard() {
         {tab === "reservations"  && <ReservationsView  />}
         {tab === "users"         && <UsersView         />}
         {tab === "settings"      && <SettingsView      />}
+      </div>
       </div>
 
       {profile && <ProfileModal onClose={() => setProfile(false)}/>}
