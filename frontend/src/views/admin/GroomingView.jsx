@@ -140,9 +140,11 @@ export default function GroomingView() {
 
   const clients = users.filter((u) => u.role === "client");
 
-  // Solicitudes de peluquería hechas por clientes registrados (vienen de la tabla appointments)
+  // Solicitudes de peluquería desde appointments:
+  //  - clientes registrados: siempre visibles
+  //  - invitados (link público): solo cuando ya fueron confirmadas (pendiente vive en Reservas Online)
   const clientGroomAppts = appointments
-    .filter((a) => a.type === "peluqueria" && a.clientId && !a.guestName)
+    .filter((a) => a.type === "peluqueria" && !(a.guestName && a.status === "pendiente"))
     .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
 
   const display = (filter === "todas" ? grooming : grooming.filter((g) => g.status === filter))
@@ -199,9 +201,15 @@ export default function GroomingView() {
                     {spIcon(pet?.species)}
                   </div>
                   <div style={{ flex:1, minWidth:150 }}>
-                    <div style={{ fontSize:14, fontWeight:800, color:T.text }}>{pet?.name || "Mascota desconocida"}</div>
+                    <div style={{ fontSize:14, fontWeight:800, color:T.text }}>
+                      {a.guestName
+                        ? `${a.guestPetName || "Mascota"} (${a.guestPetSpecies || "—"})`
+                        : (pet?.name || "Mascota desconocida")}
+                    </div>
                     <div style={{ fontSize:12, color:T.textMuted, marginTop:2 }}>
-                      👤 {client?.name || "Cliente"}{pet?.breed ? ` · ${pet.breed}` : ""}
+                      {a.guestName
+                        ? `📱 ${a.guestName}${a.guestPhone ? ` · ${a.guestPhone}` : ""}`
+                        : `👤 ${client?.name || "Cliente"}${pet?.breed ? ` · ${pet.breed}` : ""}`}
                     </div>
                     {a.notes && <div style={{ fontSize:12, color:T.textMuted, fontStyle:"italic", marginTop:2 }}>📝 {a.notes}</div>}
                   </div>
@@ -260,11 +268,14 @@ export default function GroomingView() {
                       const client = users.find((u) => u.id === a.clientId);
                       const col    = ST_COLORS[a.status] || "#94a3b8";
                       const isClient = a._src === "client";
+                      const displayName = a.guestName
+                        ? (a.guestPetName || a.guestName)
+                        : (pet?.name || "—");
                       return (
                         <div
                           key={`${a._src}-${a.id}`}
                           title={isClient
-                            ? `📱 Solicitud cliente · ${pet?.name || "—"} · ${client?.name || "—"} · ${a.status}`
+                            ? `📱 ${a.guestName || client?.name || "—"} · ${displayName} · ${a.status}`
                             : `${pet?.name || "—"} · ${a.service || ""}`}
                           style={{
                             fontSize:10, fontWeight:700, color:col,
@@ -278,7 +289,7 @@ export default function GroomingView() {
                             outlineOffset: -1,
                           }}
                         >
-                          {isClient ? "📱 " : ""}{a.time} {pet?.name || "—"}
+                          {isClient ? "📱 " : ""}{a.time} {displayName}
                         </div>
                       );
                     })}

@@ -144,9 +144,16 @@ export default function AppointmentsView() {
   const goToday  = () => setWeekStart(getMondayOf(new Date()));
 
   const todayISO = toISO(new Date());
+
+  // Las reservas de invitados (link público) solo aparecen en Agenda una vez confirmadas.
+  // Mientras están pendientes viven únicamente en ReservationsView.
+  const confirmedAppts = appointments.filter(
+    (a) => !(a.guestName && a.status === "pendiente")
+  );
+
   const apptsByDay = Array.from({ length: 7 }, (_, i) => {
     const iso = toISO(addDays(weekStart, i));
-    return appointments.filter((a) => a.date === iso);
+    return confirmedAppts.filter((a) => a.date === iso);
   });
   const blocksByDay = Array.from({ length: 7 }, (_, i) => {
     const iso = toISO(addDays(weekStart, i));
@@ -238,9 +245,9 @@ export default function AppointmentsView() {
   };
 
   // ── KPIs ──────────────────────────────────────────────────────────────
-  const todayAppts   = appointments.filter((a) => a.date === todayISO);
-  const pendingAppts = appointments.filter((a) => a.status === "pendiente");
-  const weekAppts    = appointments.filter((a) => {
+  const todayAppts   = confirmedAppts.filter((a) => a.date === todayISO);
+  const pendingAppts = confirmedAppts.filter((a) => a.status === "pendiente");
+  const weekAppts    = confirmedAppts.filter((a) => {
     const d = a.date;
     return d >= toISO(weekStart) && d <= toISO(addDays(weekStart, 6));
   });
