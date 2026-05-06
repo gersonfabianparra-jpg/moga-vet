@@ -30,6 +30,11 @@ const Grooming = {
     if (error) throw error;
     return data;
   },
+  delete: async (id) => {
+    if (useLocal()) { store.grooming.items = (store.grooming.items || []).filter((g) => g.id !== id); return; }
+    const { error } = await supabase.from("grooming").delete().eq("id", id);
+    if (error) throw error;
+  },
 };
 
 export default Grooming;

@@ -51,11 +51,17 @@ function reducer(state, action) {
     case "UPDATE_RECORD":  return { ...state, records: state.records.map((r) => r.id === action.payload.id ? action.payload : r) };
     case "SET_LOADING": return { ...state, loading: action.payload };
 
-    case "ADD_PET":     return { ...state, pets: [...state.pets, action.payload] };
-    case "ADD_RECORD":  return { ...state, records: [...state.records, action.payload] };
-    case "ADD_GROOMING":return { ...state, grooming: [...state.grooming, action.payload] };
-    case "ADD_VACCINE": return { ...state, vaccines: [...state.vaccines, action.payload] };
-    case "ADD_PAYMENT": return { ...state, payments: [...state.payments, action.payload] };
+    case "ADD_PET":      return { ...state, pets: [...state.pets, action.payload] };
+    case "UPDATE_PET":   return { ...state, pets: state.pets.map((p) => p.id === action.payload.id ? action.payload : p) };
+    case "REMOVE_PET":   return { ...state, pets: state.pets.filter((p) => p.id !== action.payload) };
+    case "ADD_RECORD":   return { ...state, records: [...state.records, action.payload] };
+    case "ADD_GROOMING": return { ...state, grooming: [...state.grooming, action.payload] };
+    case "REMOVE_GROOMING": return { ...state, grooming: state.grooming.filter((g) => g.id !== action.payload) };
+    case "ADD_VACCINE":    return { ...state, vaccines: [...state.vaccines, action.payload] };
+    case "UPDATE_VACCINE": return { ...state, vaccines: state.vaccines.map((v) => v.id === action.payload.id ? action.payload : v) };
+    case "REMOVE_VACCINE": return { ...state, vaccines: state.vaccines.filter((v) => v.id !== action.payload) };
+    case "ADD_PAYMENT":  return { ...state, payments: [...state.payments, action.payload] };
+    case "REMOVE_PAYMENT": return { ...state, payments: state.payments.filter((p) => p.id !== action.payload) };
     case "ADD_USER":    return { ...state, users: [...state.users, action.payload] };
     case "UPDATE_USER": return { ...state, users: state.users.map((u) => u.id === action.payload.id ? action.payload : u) };
     case "REMOVE_USER": return { ...state, users: state.users.filter((u) => u.id !== action.payload) };
@@ -82,9 +88,17 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     if (!state.currentUser) return;
-    if (state.currentUser.role === "superadmin") return; // superadmin gestiona su propio estado
+    if (state.currentUser.role === "superadmin") return;
     loadAll();
   }, [state.currentUser]);
+
+  // Sync cache whenever mutable data changes so refresh never shows stale data
+  useEffect(() => {
+    if (!state.currentUser || state.currentUser.role === "superadmin" || state.loading) return;
+    const { pets, users, vaccines, grooming, payments, appointments, blockedSlots } = state;
+    if (!pets.length && !users.length) return; // skip before first load
+    writeCache({ pets, users, vaccines, grooming, payments, appointments, blockedSlots });
+  }, [state.pets, state.users, state.vaccines, state.grooming, state.payments, state.appointments, state.blockedSlots]);
 
   const loadAll = async () => {
     dispatch({ type: "SET_LOADING", payload: true });
@@ -173,6 +187,15 @@ export function AppProvider({ children }) {
     dispatch({ type: "ADD_PET", payload: data });
     return data;
   };
+  const updatePet = async (id, fields) => {
+    const data = await petsService.updatePet(id, fields);
+    dispatch({ type: "UPDATE_PET", payload: data });
+    return data;
+  };
+  const removePet = async (id) => {
+    await petsService.deletePet(id);
+    dispatch({ type: "REMOVE_PET", payload: id });
+  };
   const addRecord = async (rec) => {
     const data = await recordsService.createRecord(rec);
     dispatch({ type: "ADD_RECORD", payload: data });
@@ -185,6 +208,11 @@ export function AppProvider({ children }) {
   const addGrooming = async (appt) => {
     const data = await groomingService.createGrooming(appt);
     dispatch({ type: "ADD_GROOMING", payload: data });
+    return data;
+  };
+  const removeGrooming = async (id) => {
+    await groomingService.deleteGrooming(id);
+    dispatch({ type: "REMOVE_GROOMING", payload: id });
   };
   const updateGroomingStatus = async (id, status) => {
     const data = await groomingService.updateStatus(id, status);
@@ -193,10 +221,25 @@ export function AppProvider({ children }) {
   const addVaccine = async (v) => {
     const data = await vaccinesService.createVaccine(v);
     dispatch({ type: "ADD_VACCINE", payload: data });
+    return data;
+  };
+  const updateVaccine = async (id, fields) => {
+    const data = await vaccinesService.updateVaccine(id, fields);
+    dispatch({ type: "UPDATE_VACCINE", payload: data });
+    return data;
+  };
+  const removeVaccine = async (id) => {
+    await vaccinesService.deleteVaccine(id);
+    dispatch({ type: "REMOVE_VACCINE", payload: id });
   };
   const addPayment = async (p) => {
     const data = await paymentsService.createPayment(p);
     dispatch({ type: "ADD_PAYMENT", payload: data });
+    return data;
+  };
+  const removePayment = async (id) => {
+    await paymentsService.deletePayment(id);
+    dispatch({ type: "REMOVE_PAYMENT", payload: id });
   };
   const markPaid = async (id, method) => {
     const data = await paymentsService.markPaid(id, method);
@@ -259,8 +302,12 @@ export function AppProvider({ children }) {
       ...state,
       login, logout, loadAll, updateProfile,
       enterClinic, exitImpersonation,
-      addPet, addRecord, updateRecord, addGrooming, updateGroomingStatus,
-      addVaccine, addPayment, markPaid, addUser, updateUser, removeUser,
+      addPet, updatePet, removePet,
+      addRecord, updateRecord,
+      addGrooming, removeGrooming, updateGroomingStatus,
+      addVaccine, updateVaccine, removeVaccine,
+      addPayment, removePayment, markPaid,
+      addUser, updateUser, removeUser,
       addAppointment, updateAppointment, removeAppointment,
       addBlockedSlot, removeBlockedSlot, updateSettings,
     }}>

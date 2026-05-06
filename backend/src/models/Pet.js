@@ -32,6 +32,21 @@ const Pet = {
     if (error) throw error;
     return data;
   },
+  update: async (id, fields) => {
+    if (useLocal()) {
+      const idx = store.pets.items.findIndex((p) => p.id === id);
+      if (idx !== -1) store.pets.items[idx] = { ...store.pets.items[idx], ...fields };
+      return store.pets.items[idx];
+    }
+    const { data, error } = await supabase.from("pets").update(fields).eq("id", id).select().single();
+    if (error) throw error;
+    return data;
+  },
+  delete: async (id) => {
+    if (useLocal()) { store.pets.items = (store.pets.items || []).filter((p) => p.id !== id); return; }
+    const { error } = await supabase.from("pets").delete().eq("id", id);
+    if (error) throw error;
+  },
 };
 
 export default Pet;

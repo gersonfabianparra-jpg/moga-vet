@@ -4,6 +4,7 @@ import { useNotify } from "../../context/NotificationContext.jsx";
 import { validateRut, formatRut } from "../../utils/rut.js";
 import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import T from "../../styles/tokens.js";
+import { spIcon } from "../../styles/helpers.js";
 import PageTitle from "../../components/layout/PageTitle.jsx";
 import Btn    from "../../components/ui/Btn.jsx";
 import Input  from "../../components/ui/Input.jsx";
@@ -14,15 +15,161 @@ import Avatar from "../../components/ui/Avatar.jsx";
 
 const EMPTY_CLIENT   = { name:"", email:"", rut:"", phone:"", password:"cliente123", role:"client" };
 const EMPTY_STAFF    = { name:"", email:"", phone:"", password:"", role:"vet", avatar:"" };
-const EMPTY_PET_FORM = { name:"", species:"Perro", breed:"", gender:"Hembra", age:"", weight:"" };
+const EMPTY_PET_FORM = { name:"", species:"Perro", breed:"", gender:"Hembra", age:"", weight:"", color:"", chip:"" };
 
 const ROLE_LABEL = { admin:"Administrador", vet:"Veterinario/a", client:"Cliente" };
 const ROLE_COLOR = { admin: T.brand, vet: "#7c3aed", client: "#0284c7" };
 
+// ── Modal de mascotas por cliente ─────────────────────────────────────────────
+function PetsModal({ client, pets, onClose, addPet, updatePet, removePet, notify }) {
+  const clientPets = pets.filter((p) => p.ownerId === client.id);
+  const [mode, setMode]           = useState("list"); // list | add | edit
+  const [editingPet, setEditingPet] = useState(null);
+  const [form, setForm]           = useState(EMPTY_PET_FORM);
+  const [busy, setBusy]           = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const openAdd = () => { setForm(EMPTY_PET_FORM); setMode("add"); };
+  const openEdit = (pet) => {
+    setForm({ name: pet.name || "", species: pet.species || "Perro", breed: pet.breed || "", gender: pet.gender || "Hembra", age: pet.age ?? "", weight: pet.weight ?? "", color: pet.color || "", chip: pet.chip || "" });
+    setEditingPet(pet);
+    setMode("edit");
+  };
+
+  const save = async () => {
+    if (!form.name) return;
+    setBusy(true);
+    try {
+      if (mode === "add") {
+        await addPet({ ...form, age: form.age ? +form.age : null, weight: form.weight ? +form.weight : null, ownerId: client.id });
+        notify(`${form.name} agregada a ${client.name}.`, "success");
+      } else {
+        await updatePet(editingPet.id, { ...form, age: form.age ? +form.age : null, weight: form.weight ? +form.weight : null });
+        notify("Mascota actualizada.", "success");
+      }
+      setMode("list");
+    } catch { notify("Error al guardar la mascota.", "error"); }
+    finally { setBusy(false); }
+  };
+
+  const confirmDelete = async () => {
+    setBusy(true);
+    try {
+      await removePet(deleteTarget.id);
+      setDeleteTarget(null);
+      notify(`${deleteTarget.name} eliminada.`, "info");
+    } catch { notify("Error al eliminar.", "error"); }
+    finally { setBusy(false); }
+  };
+
+  const PetForm = () => (
+    <>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 14px" }}>
+        <Input label="Nombre *" value={form.name} onChange={(e) => setForm({...form, name:e.target.value})} placeholder="Luna" />
+        <Select label="Especie" value={form.species} onChange={(e) => setForm({...form, species:e.target.value})}>
+          {["Perro","Gato","Conejo","Ave","Otro"].map((s) => <option key={s}>{s}</option>)}
+        </Select>
+        <Input label="Raza" value={form.breed} onChange={(e) => setForm({...form, breed:e.target.value})} placeholder="Labrador" />
+        <Select label="Género" value={form.gender} onChange={(e) => setForm({...form, gender:e.target.value})}>
+          <option>Hembra</option><option>Macho</option>
+        </Select>
+        <Input label="Edad (años)" type="number" value={form.age} onChange={(e) => setForm({...form, age:e.target.value})} placeholder="3" />
+        <Input label="Peso (kg)" type="number" step="0.1" value={form.weight} onChange={(e) => setForm({...form, weight:e.target.value})} placeholder="12.5" />
+        <Input label="Color" value={form.color} onChange={(e) => setForm({...form, color:e.target.value})} placeholder="Dorado" />
+        <Input label="Microchip" value={form.chip} onChange={(e) => setForm({...form, chip:e.target.value})} placeholder="985141..." />
+      </div>
+    </>
+  );
+
+  return (
+    <Modal
+      title={`Mascotas de ${client.name}`}
+      sub={`${clientPets.length} mascota${clientPets.length !== 1 ? "s" : ""} registrada${clientPets.length !== 1 ? "s" : ""}`}
+      onClose={onClose}>
+
+      {mode === "list" && (
+        <>
+          {clientPets.length === 0 ? (
+            <div style={{ textAlign:"center", padding:"24px 0", color:T.textMuted, fontSize:14 }}>
+              <div style={{ fontSize:36, marginBottom:8 }}>🐾</div>
+              Este cliente no tiene mascotas registradas.
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:16 }}>
+              {clientPets.map((pet) => (
+                <div key={pet.id} style={{ display:"flex", alignItems:"center", gap:12, background:T.appBg, borderRadius:12, padding:"12px 16px", border:`1px solid ${T.border}` }}>
+                  <div style={{ width:44, height:44, borderRadius:10, background:T.brandLight, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>
+                    {spIcon(pet.species)}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:800, fontSize:15, color:T.text }}>{pet.name}</div>
+                    <div style={{ fontSize:12, color:T.textMuted, marginTop:2 }}>
+                      {pet.species}{pet.breed ? ` · ${pet.breed}` : ""}{pet.gender ? ` · ${pet.gender}` : ""}
+                    </div>
+                    <div style={{ fontSize:12, color:T.textMuted, marginTop:1 }}>
+                      {pet.age ? `${pet.age} año${pet.age !== 1 ? "s" : ""}` : ""}
+                      {pet.weight ? ` · ${pet.weight} kg` : ""}
+                      {pet.color ? ` · ${pet.color}` : ""}
+                      {pet.chip ? ` · Chip: ${pet.chip}` : ""}
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+                    <button onClick={() => openEdit(pet)}
+                      style={{ padding:"5px 10px", borderRadius:7, border:`1px solid ${T.border}`, background:T.brandLight, color:T.brand, cursor:"pointer", fontSize:13, fontFamily:T.font }}
+                      title="Editar">✏</button>
+                    <button onClick={() => setDeleteTarget(pet)}
+                      style={{ padding:"5px 10px", borderRadius:7, border:"1px solid #fca5a5", background:"#fee2e2", color:"#dc2626", cursor:"pointer", fontSize:13, fontFamily:T.font }}
+                      title="Eliminar">🗑</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display:"flex", gap:10, justifyContent:"space-between" }}>
+            <Btn v="accent" onClick={openAdd}>🐾 + Agregar mascota</Btn>
+            <Btn v="ghost" onClick={onClose}>Cerrar</Btn>
+          </div>
+        </>
+      )}
+
+      {(mode === "add" || mode === "edit") && (
+        <>
+          <div style={{ fontSize:13, fontWeight:700, color:T.textMuted, marginBottom:12 }}>
+            {mode === "add" ? "Nueva mascota" : `Editando: ${editingPet?.name}`}
+          </div>
+          <PetForm />
+          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:8 }}>
+            <Btn v="ghost" onClick={() => setMode("list")}>← Volver</Btn>
+            <Btn v="accent" onClick={save} disabled={busy || !form.name}>
+              {busy ? "Guardando…" : mode === "add" ? "Agregar" : "Guardar cambios"}
+            </Btn>
+          </div>
+        </>
+      )}
+
+      {deleteTarget && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ background:T.panel, borderRadius:16, padding:"28px 32px", maxWidth:380, width:"90%", boxShadow:T.md }}>
+            <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:12 }}>Eliminar mascota</div>
+            <p style={{ fontSize:14, color:T.text, marginBottom:20, lineHeight:1.6 }}>
+              ¿Eliminar a <strong>{deleteTarget.name}</strong>? Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+              <Btn v="ghost" onClick={() => setDeleteTarget(null)}>Cancelar</Btn>
+              <Btn v="danger" onClick={confirmDelete} disabled={busy}>{busy ? "Eliminando…" : "Sí, eliminar"}</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 export default function UsersView() {
-  const { users, pets, currentUser, addUser, updateUser, removeUser, addPet } = useApp();
+  const { users, pets, currentUser, addUser, updateUser, removeUser, addPet, updatePet, removePet } = useApp();
   const { isMobile } = useBreakpoint();
   const notify = useNotify();
+  const [petsModalClient, setPetsModalClient] = useState(null);
 
   const [clientSearch, setClientSearch] = useState("");
   const [clientFilter, setClientFilter] = useState("todos"); // todos | con_mascotas | sin_mascotas
@@ -249,16 +396,12 @@ export default function UsersView() {
                 <div style={{ fontSize:12, color:T.textMuted, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.email}</div>
                 <div style={{ fontSize:12, color:T.textMuted }}>{c.phone||"—"}</div>
                 <div style={{ fontSize:12, color:T.text }}>
-                  {myPets.length > 0
-                    ? myPets.slice(0,2).map((p) => (
-                        <span key={p.id} style={{ display:"inline-block", background:T.brandLight, color:T.brand,
-                          padding:"2px 8px", borderRadius:20, fontSize:11, fontWeight:600, marginRight:4 }}>
-                          {p.name}
-                        </span>
-                      ))
-                    : <span style={{ color:T.textMuted, fontSize:11 }}>—</span>
-                  }
-                  {myPets.length > 2 && <span style={{ fontSize:11, color:T.textMuted }}>+{myPets.length-2}</span>}
+                  <button onClick={() => setPetsModalClient(c)}
+                    style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px",
+                      borderRadius:20, border:`1px solid ${T.brand}`, background:T.brandLight,
+                      color:T.brand, cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:T.font }}>
+                    🐾 {myPets.length}
+                  </button>
                 </div>
                 <div style={{ display:"flex", gap:6 }}>
                   {canEdit(c) && <button onClick={() => openEdit(c)} style={{ background:T.brandLight, border:"none", cursor:"pointer", color:T.brand, borderRadius:6, padding:"4px 8px", fontSize:12, fontWeight:600 }}>✎</button>}
@@ -296,15 +439,23 @@ export default function UsersView() {
                 <div style={{ padding:"14px 20px" }}>
                   <div style={{ fontSize:13, color:T.textMuted, marginBottom:4 }}>📧 {c.email}</div>
                   <div style={{ fontSize:13, color:T.textMuted, marginBottom:12 }}>📱 {c.phone}</div>
-                  <div style={{ paddingTop:10, borderTop:`1px solid ${T.border}`, fontSize:13, display:"flex", gap:8, flexWrap:"wrap" }}>
-                    {myPets.length > 0
-                      ? myPets.map((p) => (
-                          <span key={p.id} style={{ display:"inline-flex", alignItems:"center", gap:4, background:T.brandLight, color:T.brand, padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600 }}>
-                            {p.species==="Perro"?"🐶":p.species==="Gato"?"🐱":"🐾"} {p.name}
-                          </span>
-                        ))
-                      : <span style={{ color:T.textMuted, fontSize:12 }}>Sin mascotas registradas</span>
-                    }
+                  <div style={{ paddingTop:10, borderTop:`1px solid ${T.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap", flex:1 }}>
+                      {myPets.length > 0
+                        ? myPets.slice(0,2).map((p) => (
+                            <span key={p.id} style={{ display:"inline-flex", alignItems:"center", gap:4, background:T.brandLight, color:T.brand, padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600 }}>
+                              {p.species==="Perro"?"🐶":p.species==="Gato"?"🐱":"🐾"} {p.name}
+                            </span>
+                          ))
+                        : <span style={{ color:T.textMuted, fontSize:12 }}>Sin mascotas</span>
+                      }
+                      {myPets.length > 2 && <span style={{ fontSize:11, color:T.textMuted }}>+{myPets.length-2}</span>}
+                    </div>
+                    <button onClick={() => setPetsModalClient(c)}
+                      style={{ flexShrink:0, padding:"5px 12px", borderRadius:20, border:`1px solid ${T.brand}`,
+                        background:T.brandLight, color:T.brand, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+                      🐾 Mascotas
+                    </button>
                   </div>
                 </div>
               </div>
@@ -442,6 +593,19 @@ export default function UsersView() {
             <Btn v="danger" onClick={confirmDelete} disabled={loading}>Sí, eliminar</Btn>
           </div>
         </Modal>
+      )}
+
+      {/* Modal: mascotas del cliente */}
+      {petsModalClient && (
+        <PetsModal
+          client={petsModalClient}
+          pets={pets}
+          onClose={() => setPetsModalClient(null)}
+          addPet={addPet}
+          updatePet={updatePet}
+          removePet={removePet}
+          notify={notify}
+        />
       )}
     </div>
   );

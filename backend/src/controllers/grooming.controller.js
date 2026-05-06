@@ -31,3 +31,12 @@ export const updateStatus = async (req, res, next) => {
     next(err);
   }
 };
+
+export const remove = async (req, res, next) => {
+  try {
+    await Grooming.delete(Number(req.params.id));
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -30,6 +30,11 @@ const Payment = {
     if (error) throw error;
     return data;
   },
+  delete: async (id) => {
+    if (useLocal()) { store.payments.items = (store.payments.items || []).filter((p) => p.id !== id); return; }
+    const { error } = await supabase.from("payments").delete().eq("id", id);
+    if (error) throw error;
+  },
 };
 
 export default Payment;

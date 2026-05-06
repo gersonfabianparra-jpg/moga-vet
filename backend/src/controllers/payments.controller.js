@@ -30,3 +30,12 @@ export const markPaid = async (req, res, next) => {
     next(err);
   }
 };
+
+export const remove = async (req, res, next) => {
+  try {
+    await Payment.delete(Number(req.params.id));
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+};

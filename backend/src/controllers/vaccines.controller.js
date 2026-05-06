@@ -25,3 +25,23 @@ export const create = async (req, res, next) => {
     next(err);
   }
 };
+
+export const update = async (req, res, next) => {
+  try {
+    const allowed = ["petId", "name", "dateApplied", "nextDue", "vet", "lot"];
+    const fields = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+    const vaccine = await Vaccine.update(Number(req.params.id), fields);
+    res.json(vaccine);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const remove = async (req, res, next) => {
+  try {
+    await Vaccine.delete(Number(req.params.id));
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+};

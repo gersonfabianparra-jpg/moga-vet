@@ -24,6 +24,21 @@ const Vaccine = {
     if (error) throw error;
     return data;
   },
+  update: async (id, fields) => {
+    if (useLocal()) {
+      const idx = store.vaccines.items?.findIndex((v) => v.id === id) ?? -1;
+      if (idx !== -1) store.vaccines.items[idx] = { ...store.vaccines.items[idx], ...fields };
+      return store.vaccines.items?.[idx];
+    }
+    const { data, error } = await supabase.from("vaccines").update(fields).eq("id", id).select().single();
+    if (error) throw error;
+    return data;
+  },
+  delete: async (id) => {
+    if (useLocal()) { store.vaccines.items = (store.vaccines.items || []).filter((v) => v.id !== id); return; }
+    const { error } = await supabase.from("vaccines").delete().eq("id", id);
+    if (error) throw error;
+  },
 };
 
 export default Vaccine;
