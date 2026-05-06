@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useApp } from "../../context/AppContext.jsx";
 import { useNotify } from "../../context/NotificationContext.jsx";
 import { validateRut, formatRut } from "../../utils/rut.js";
@@ -192,18 +192,23 @@ export default function UsersView() {
 
   const [clientView, setClientView] = useState("list");
 
-  const staff = users.filter((u) => u.role !== "client" && !u.isRoot);
-  const clients = users
-    .filter((u) => u.role === "client")
-    .filter((u) => {
-      const q = clientSearch.toLowerCase();
-      if (q && ![u.name, u.email, u.phone, u.rut].join(" ").toLowerCase().includes(q)) return false;
-      const myPets = pets.filter((p) => p.ownerId === u.id);
-      if (clientFilter === "con_mascotas"  && myPets.length === 0) return false;
-      if (clientFilter === "sin_mascotas"  && myPets.length  >  0) return false;
-      return true;
-    })
-    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  const staff = useMemo(() =>
+    users.filter((u) => u.role !== "client" && !u.isRoot),
+  [users]);
+
+  const clients = useMemo(() =>
+    users
+      .filter((u) => u.role === "client")
+      .filter((u) => {
+        const q = clientSearch.toLowerCase();
+        if (q && ![u.name, u.email, u.phone, u.rut].join(" ").toLowerCase().includes(q)) return false;
+        const myPets = pets.filter((p) => p.ownerId === u.id);
+        if (clientFilter === "con_mascotas"  && myPets.length === 0) return false;
+        if (clientFilter === "sin_mascotas"  && myPets.length  >  0) return false;
+        return true;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, "es")),
+  [users, pets, clientSearch, clientFilter]);
 
   const saveClient = async () => {
     if (!formClient.name || !formClient.email || !formClient.rut) return;

@@ -1,13 +1,6 @@
 {
-  "experimentalServices": {
-    "frontend": {
-      "entrypoint": "frontend",
-      "routePrefix": "/",
-      "framework": "vite"
-    },
-    "backend": {
-      "entrypoint": "backend",
-      "routePrefix": "/_/backend"
-    }
-  }
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://backend-sigma-opal-75.vercel.app/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
