@@ -89,6 +89,8 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!state.currentUser) return;
     if (state.currentUser.role === "superadmin") return;
+    // Skip if data already in memory (e.g. triggered by updateProfile dispatching SET_USER)
+    if (state.pets.length > 0 || state.users.length > 0) return;
     loadAll();
   }, [state.currentUser]);
 
