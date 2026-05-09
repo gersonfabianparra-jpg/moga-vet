@@ -1,16 +1,17 @@
 import supabase from "../config/supabase.js";
 import { store } from "../data/localStore.js";
+import { fetchAll } from "../utils/paginate.js";
 
 const useLocal = () => process.env.USE_LOCAL === "true" || !process.env.SUPABASE_URL || process.env.SUPABASE_URL.includes("your-project");
 
 const Payment = {
   findAll: async (tenantId) => {
     if (useLocal()) return store.payments.findAll(tenantId);
-    let q = supabase.from("payments").select("*").limit(10000);
-    if (tenantId != null) q = q.eq("tenantId", tenantId);
-    const { data, error } = await q.order("date", { ascending: false });
-    if (error) throw error;
-    return data;
+    return fetchAll(() => {
+      let q = supabase.from("payments").select("*").order("date", { ascending: false });
+      if (tenantId != null) q = q.eq("tenantId", tenantId);
+      return q;
+    });
   },
   findByClientId: async (clientId) => {
     if (useLocal()) return store.payments.findByClientId(clientId);
