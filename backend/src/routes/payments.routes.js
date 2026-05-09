@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { getAll, create, markPaid, remove } from "../controllers/payments.controller.js";
+import { getAll, create, update, markPaid, remove } from "../controllers/payments.controller.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
 
 const router = Router();
 
 router.get("/",         requireAuth,  getAll);
 router.post("/",        requireStaff, create);
+router.put("/:id",      requireStaff, update);
 router.patch("/:id/pay",requireStaff, markPaid);
 router.delete("/:id",   requireStaff, remove);
 

@@ -22,6 +22,15 @@ export const create = async (req, res, next) => {
   }
 };
 
+export const update = async (req, res, next) => {
+  try {
+    const payment = await Payment.update(Number(req.params.id), req.body);
+    res.json(payment);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const markPaid = async (req, res, next) => {
   try {
     const payment = await Payment.markPaid(Number(req.params.id), req.body.method);

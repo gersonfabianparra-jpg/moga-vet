@@ -25,6 +25,16 @@ const Payment = {
     if (error) throw error;
     return data;
   },
+  update: async (id, fields) => {
+    if (useLocal()) {
+      const idx = store.payments.items?.findIndex((p) => p.id === id) ?? -1;
+      if (idx !== -1) store.payments.items[idx] = { ...store.payments.items[idx], ...fields };
+      return store.payments.items?.[idx];
+    }
+    const { data, error } = await supabase.from("payments").update(fields).eq("id", id).select().single();
+    if (error) throw error;
+    return data;
+  },
   markPaid: async (id, method) => {
     if (useLocal()) return store.payments.markPaid(id, method);
     const { data, error } = await supabase.from("payments").update({ status: "pagado", method }).eq("id", id).select().single();

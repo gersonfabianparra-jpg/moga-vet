@@ -239,6 +239,11 @@ export function AppProvider({ children }) {
     dispatch({ type: "ADD_PAYMENT", payload: data });
     return data;
   };
+  const updatePayment = async (id, fields) => {
+    const data = await paymentsService.updatePayment(id, fields);
+    dispatch({ type: "UPDATE_PAYMENT", payload: data });
+    return data;
+  };
   const removePayment = async (id) => {
     await paymentsService.deletePayment(id);
     dispatch({ type: "REMOVE_PAYMENT", payload: id });
@@ -308,7 +313,7 @@ export function AppProvider({ children }) {
       addRecord, updateRecord,
       addGrooming, removeGrooming, updateGroomingStatus,
       addVaccine, updateVaccine, removeVaccine,
-      addPayment, removePayment, markPaid,
+      addPayment, updatePayment, removePayment, markPaid,
       addUser, updateUser, removeUser,
       addAppointment, updateAppointment, removeAppointment,
       addBlockedSlot, removeBlockedSlot, updateSettings,
