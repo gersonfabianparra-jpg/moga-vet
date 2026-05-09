@@ -6,7 +6,7 @@ const useLocal = () => process.env.USE_LOCAL === "true" || !process.env.SUPABASE
 const Vaccine = {
   findAll: async (tenantId) => {
     if (useLocal()) return store.vaccines.findAll(tenantId);
-    let q = supabase.from("vaccines").select("*");
+    let q = supabase.from("vaccines").select("*").limit(10000);
     if (tenantId != null) q = q.eq("tenantId", tenantId);
     const { data, error } = await q;
     if (error) throw error;
