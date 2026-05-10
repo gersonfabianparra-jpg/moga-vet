@@ -14,7 +14,6 @@ import UsersView        from "./UsersView.jsx";
 import AppointmentsView  from "./AppointmentsView.jsx";
 import ReservationsView  from "./ReservationsView.jsx";
 import SettingsView      from "./SettingsView.jsx";
-import PetTimelineView   from "./PetTimelineView.jsx";
 import StatsView         from "./StatsView.jsx";
 import Modal  from "../../components/ui/Modal.jsx";
 import Input  from "../../components/ui/Input.jsx";
@@ -163,7 +162,6 @@ export default function AdminDashboard() {
         {tab === "overview"      && <OverviewView      />}
         {tab === "stats"         && <StatsView         />}
         {tab === "pets"          && <PetsView          />}
-        {tab === "pet_timeline"  && <PetTimelineView   />}
         {tab === "records"      && <RecordsView      />}
         {tab === "grooming"     && <GroomingView     />}
         {tab === "vaccines"     && <VaccinesView     />}

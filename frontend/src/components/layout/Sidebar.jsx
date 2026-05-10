@@ -8,7 +8,6 @@ const NAV = [
   { id:"overview",      icon:"▦",  label:"Inicio" },
   { id:"stats",         icon:"📊", label:"Estadísticas" },
   { id:"pets",          icon:"🐾", label:"Mascotas" },
-  { id:"pet_timeline",  icon:"📋", label:"Ficha clínica" },
   { id:"grooming",      icon:"✂️", label:"Peluquería" },
   { id:"vaccines",      icon:"💉", label:"Vacunas" },
   { id:"payments",      icon:"💳", label:"Pagos" },
