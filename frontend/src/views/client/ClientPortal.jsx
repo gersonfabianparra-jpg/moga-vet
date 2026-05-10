@@ -163,50 +163,82 @@ export default function ClientPortal() {
               </div>
         )}
 
-        {tab === "pets" && selPet && (
-          <div>
-            <button onClick={() => setSelPet(null)} style={{ background:"none", border:"none", color:T.gold, cursor:"pointer", fontSize:14, fontWeight:600, fontFamily:T.font, display:"flex", alignItems:"center", gap:6, marginBottom:18, padding:0 }}>← Volver</button>
-            <div style={{ display:"grid", gridTemplateColumns:"250px 1fr", gap:18 }}>
-              <div style={{ background:T.panel, borderRadius:16, boxShadow:T.md, overflow:"hidden" }}>
-                <div style={{ background:`linear-gradient(135deg,${T.brand},${T.brandMid})`, padding:24, textAlign:"center" }}>
-                  <div style={{ fontSize:56, marginBottom:6 }}>{spIcon(selPet.species)}</div>
-                  <div style={{ fontSize:22, fontWeight:800, color:"#fff" }}>{selPet.name}</div>
-                  <div style={{ fontSize:13, color:"rgba(255,255,255,0.65)", marginTop:2 }}>{selPet.breed}</div>
-                </div>
-                <div style={{ padding:"16px 18px" }}>
-                  {[ ["Especie",selPet.species],["Género",selPet.gender],["Edad",`${selPet.age} años`],["Peso",`${selPet.weight} kg`],["Color",selPet.color] ].map(([k,v]) => (
-                    <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${T.border}`, fontSize:13 }}>
-                      <span style={{ color:T.textMuted }}>{k}</span><span style={{ fontWeight:600 }}>{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div style={{ background:T.panel, borderRadius:16, boxShadow:T.md, padding:"24px 28px" }}>
-                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:20 }}>📋 Historial médico</div>
-                {records.filter((r) => r.petId === selPet.id).sort((a,b) => b.date.localeCompare(a.date)).map((r, i, arr) => (
-                  <div key={r.id} style={{ display:"flex", gap:16, marginBottom: i===arr.length-1?0:20, position:"relative" }}>
-                    {arr.length > 1 && i < arr.length-1 && <div style={{ position:"absolute", left:18, top:38, bottom:-20, width:2, background:T.border }}/>}
-                    <div style={{ width:36, height:36, borderRadius:"50%", background:T.brandLight, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0, zIndex:1 }}>
-                      {r.type==="Urgencia"?"🚨":r.type==="Cirugía"?"🔬":r.type==="Vacunación"?"💉":"📋"}
-                    </div>
-                    <div style={{ flex:1, background:T.appBg, borderRadius:12, padding:"14px 16px" }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                        <span style={{ fontWeight:800, fontSize:14 }}>{fmtDate(r.date)}</span>
-                        <TypeBadge type={r.type}/>
-                      </div>
-                      <div style={{ fontSize:13, marginBottom:4 }}><strong>Diagnóstico:</strong> {r.diagnosis}</div>
-                      {r.treatment && <div style={{ fontSize:13, marginBottom:4 }}><strong>Tratamiento:</strong> {r.treatment}</div>}
-                      <div style={{ fontSize:11, color:T.textMuted, marginTop:6 }}>Dr/a: {r.vet} · {r.weight}kg · {r.temperature}°C</div>
-                      {r.notes && <div style={{ fontSize:12, background:T.panel, padding:"8px 10px", borderRadius:8, marginTop:8, borderLeft:`3px solid ${T.brand}`, color:T.textMuted }}>📝 {r.notes}</div>}
-                      {r.nextVisit && <div style={{ fontSize:12, color:T.brandMid, fontWeight:700, marginTop:8 }}>🗓 Próxima: {fmtDate(r.nextVisit)}</div>}
-                    </div>
+        {tab === "pets" && selPet && (() => {
+          const petId = selPet.id;
+          const TYPE_CFG = {
+            record:   { icon:"📋", label:"Consulta",   bg:"#EEF2FF", color:"#4338CA", border:"#A5B4FC" },
+            vaccine:  { icon:"💉", label:"Vacuna",     bg:"#F0FDF4", color:"#15803D", border:"#86EFAC" },
+            grooming: { icon:"✂️", label:"Peluquería", bg:"#FAF5FF", color:"#7E22CE", border:"#D8B4FE" },
+            payment:  { icon:"💳", label:"Pago",       bg:"#FFF7ED", color:"#C2410C", border:"#FDBA74" },
+          };
+          const timeline = [
+            ...records.filter((r) => r.petId === petId).map((r) => ({ type:"record",   date:r.date,        title:r.diagnosis||r.reason||"Consulta", sub:r.treatment||"", extra: r.notes ? `📝 ${r.notes}` : (r.nextVisit ? `🗓 Próxima: ${fmtDate(r.nextVisit)}` : ""), detail:`Dr/a: ${r.vet||"—"} · ${r.weight||"?"}kg · ${r.temperature||"?"}°C` })),
+            ...vaccines.filter((v) => v.petId === petId).map((v) => ({ type:"vaccine",  date:v.dateApplied, title:v.name, sub: v.vet ? `Aplicada por ${v.vet}` : "", extra: v.nextDue ? `Próxima dosis: ${fmtDate(v.nextDue)}` : "" })),
+            ...grooming.filter((g) => g.petId === petId).map((g) => ({ type:"grooming", date:g.date,        title:g.service||"Baño y peluquería", sub:g.notes||"", extra: g.status ? `Estado: ${g.status}` : "" })),
+            ...payments.filter((p) => p.petId === petId).map((p) => ({ type:"payment",  date:p.date,        title:p.concept, sub:`${fmtCLP(p.amount)} · ${p.status==="pagado"?"Pagado":"Pendiente"}`, extra:p.method||"" })),
+          ].filter((i) => i.date).sort((a,b) => b.date.localeCompare(a.date));
+          const counts = { record:0, vaccine:0, grooming:0, payment:0 };
+          timeline.forEach((i) => { counts[i.type]++; });
+          return (
+            <div>
+              <button onClick={() => setSelPet(null)} style={{ background:"none", border:"none", color:T.gold, cursor:"pointer", fontSize:14, fontWeight:600, fontFamily:T.font, display:"flex", alignItems:"center", gap:6, marginBottom:18, padding:0 }}>← Volver a mis mascotas</button>
+              <div style={{ display:"grid", gridTemplateColumns:"minmax(220px,260px) 1fr", gap:18, alignItems:"start" }}>
+                {/* Columna izquierda: info de la mascota */}
+                <div style={{ background:T.panel, borderRadius:16, boxShadow:T.md, overflow:"hidden" }}>
+                  <div style={{ background:`linear-gradient(135deg,${T.brand},${T.brandMid})`, padding:24, textAlign:"center" }}>
+                    <div style={{ fontSize:56, marginBottom:6 }}>{spIcon(selPet.species)}</div>
+                    <div style={{ fontSize:22, fontWeight:800, color:"#fff" }}>{selPet.name}</div>
+                    <div style={{ fontSize:13, color:"rgba(255,255,255,0.65)", marginTop:2 }}>{selPet.breed}</div>
                   </div>
-                ))}
-                {records.filter((r) => r.petId === selPet.id).length === 0 && <div style={{ color:T.textMuted, fontSize:14 }}>Sin fichas médicas aún.</div>}
+                  <div style={{ padding:"16px 18px" }}>
+                    {[["Especie",selPet.species],["Género",selPet.gender],["Edad",selPet.age?`${selPet.age} años`:"—"],["Peso",selPet.weight?`${selPet.weight} kg`:"—"],["Color",selPet.color||"—"]].map(([k,v]) => (
+                      <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${T.border}`, fontSize:13 }}>
+                        <span style={{ color:T.textMuted }}>{k}</span><span style={{ fontWeight:600 }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Mini resumen */}
+                  <div style={{ padding:"12px 14px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                    {Object.entries(TYPE_CFG).map(([t,cfg]) => (
+                      <div key={t} style={{ background:cfg.bg, border:`1px solid ${cfg.border}`, borderRadius:10, padding:"8px", textAlign:"center" }}>
+                        <div style={{ fontSize:16 }}>{cfg.icon}</div>
+                        <div style={{ fontSize:18, fontWeight:800, color:cfg.color }}>{counts[t]}</div>
+                        <div style={{ fontSize:10, color:cfg.color, fontWeight:600 }}>{cfg.label}s</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Columna derecha: timeline completo */}
+                <div style={{ background:T.panel, borderRadius:16, boxShadow:T.md, padding:"24px 28px" }}>
+                  <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:20 }}>📋 Historial clínico completo</div>
+                  {timeline.length === 0
+                    ? <div style={{ color:T.textMuted, fontSize:14 }}>Sin registros aún.</div>
+                    : timeline.map((item, i) => {
+                        const cfg = TYPE_CFG[item.type];
+                        return (
+                          <div key={`${item.type}-${i}`} style={{ display:"flex", gap:14, marginBottom: i===timeline.length-1?0:18 }}>
+                            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
+                              <div style={{ width:36, height:36, borderRadius:10, background:cfg.bg, border:`2px solid ${cfg.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, zIndex:1 }}>{cfg.icon}</div>
+                              {i < timeline.length-1 && <div style={{ width:2, flex:1, minHeight:16, background:T.border, marginTop:4 }}/>}
+                            </div>
+                            <div style={{ flex:1 }}>
+                              <div style={{ fontSize:11, fontWeight:700, color:cfg.color, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:3 }}>{cfg.label} · {fmtDate(item.date)}</div>
+                              <div style={{ background:T.appBg, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 14px" }}>
+                                <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{item.title}</div>
+                                {item.sub    && <div style={{ fontSize:12, color:T.textMuted, marginTop:3 }}>{item.sub}</div>}
+                                {item.detail && <div style={{ fontSize:11, color:T.textMuted, marginTop:3 }}>{item.detail}</div>}
+                                {item.extra  && <div style={{ fontSize:11, color:T.textMuted, marginTop:3, fontStyle:"italic" }}>{item.extra}</div>}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                  }
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Citas peluquería */}
         {/* Agenda */}

@@ -2,8 +2,15 @@ import { useState, useMemo } from "react";
 import { useApp } from "../../context/AppContext.jsx";
 import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import T from "../../styles/tokens.js";
-import { fmtDate, fmtCLP, spIcon } from "../../styles/helpers.js";
-import { vaxStatus } from "../../styles/helpers.js";
+import { fmtDate, fmtCLP, spIcon, vaxStatus } from "../../styles/helpers.js";
+import Modal  from "../../components/ui/Modal.jsx";
+import Input  from "../../components/ui/Input.jsx";
+import Select from "../../components/ui/Select.jsx";
+import Btn    from "../../components/ui/Btn.jsx";
+
+const TODAY = new Date().toISOString().slice(0, 10);
+const RECORD_TYPES = ["Consulta","Control","Urgencia","Cirugía","Vacunación","Otro"];
+const EMPTY_REC = { date: TODAY, type: "Consulta", vet: "", diagnosis: "", treatment: "", weight: "", temperature: "", notes: "", nextVisit: "" };
 
 const TYPE_CONFIG = {
   record:   { icon: "📋", label: "Consulta",    bg: "#EEF2FF", color: "#4338CA", border: "#A5B4FC" },
@@ -146,13 +153,16 @@ function TimelineItem({ item, isLast }) {
 
 /* ── Vista principal ── */
 export default function PetTimelineView() {
-  const { pets, users, records, vaccines, grooming, payments } = useApp();
+  const { pets, users, records, vaccines, grooming, payments, addRecord } = useApp();
   const { isMobile } = useBreakpoint();
-  const [search, setSearch]       = useState("");
-  const [selectedId, setSelectedId] = useState(null);
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [search, setSearch]           = useState("");
+  const [selectedId, setSelectedId]   = useState(null);
+  const [typeFilter, setTypeFilter]   = useState("all");
   const [speciesFilter, setSpeciesFilter] = useState("");
-  const [showTimeline, setShowTimeline]   = useState(false); // mobile: alterna lista/timeline
+  const [showTimeline, setShowTimeline]   = useState(false);
+  const [recModal, setRecModal]       = useState(false);
+  const [recForm, setRecForm]         = useState(EMPTY_REC);
+  const [recBusy, setRecBusy]         = useState(false);
 
   const filteredPets = useMemo(() => {
     let list = [...pets];
@@ -187,6 +197,18 @@ export default function PetTimelineView() {
   };
 
   const totalEvents = Object.values(counts).reduce((s, n) => s + n, 0);
+  const vets = users.filter((u) => u.role !== "client");
+
+  const saveRecord = async () => {
+    if (!recForm.diagnosis || recBusy) return;
+    setRecBusy(true);
+    try {
+      await addRecord({ ...recForm, petId: selectedId, weight: +recForm.weight || null });
+      setRecModal(false);
+      setRecForm(EMPTY_REC);
+      setTypeFilter("record");
+    } finally { setRecBusy(false); }
+  };
 
   /* ── layout ── */
   return (
@@ -271,6 +293,14 @@ export default function PetTimelineView() {
               <>
                 <PetCard pet={selectedPet} owner={owner} counts={counts} vaccines={vaccines} />
 
+                {/* Acción rápida */}
+                <div style={{ marginBottom: 16 }}>
+                  <button onClick={() => { setRecForm(EMPTY_REC); setRecModal(true); }}
+                    style={{ padding: "9px 18px", borderRadius: 10, border: "none", background: T.brand, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>
+                    📋 + Nueva consulta
+                  </button>
+                </div>
+
                 {/* Filtros */}
                 <div style={{ display: "flex", gap: 6, marginBottom: 18, flexWrap: "wrap" }}>
                   {FILTERS.map((f) => (
@@ -299,6 +329,34 @@ export default function PetTimelineView() {
           </div>
         )}
       </div>
+
+      {/* Modal nueva consulta */}
+      {recModal && selectedPet && (
+        <Modal title={`Nueva consulta — ${selectedPet.name}`} onClose={() => setRecModal(false)}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+            <Input label="Fecha *" type="date" value={recForm.date} onChange={(e) => setRecForm({ ...recForm, date: e.target.value })} />
+            <Select label="Tipo" value={recForm.type} onChange={(e) => setRecForm({ ...recForm, type: e.target.value })}>
+              {RECORD_TYPES.map((t) => <option key={t}>{t}</option>)}
+            </Select>
+            <Input label="Peso (kg)" type="number" step="0.1" value={recForm.weight} onChange={(e) => setRecForm({ ...recForm, weight: e.target.value })} placeholder="25.5" />
+            <Input label="Temperatura (°C)" value={recForm.temperature} onChange={(e) => setRecForm({ ...recForm, temperature: e.target.value })} placeholder="38.5" />
+          </div>
+          <Select label="Veterinario/a" value={recForm.vet} onChange={(e) => setRecForm({ ...recForm, vet: e.target.value })}>
+            <option value="">Seleccionar...</option>
+            {vets.map((v) => <option key={v.id}>{v.name}</option>)}
+          </Select>
+          <Input label="Diagnóstico *" value={recForm.diagnosis} onChange={(e) => setRecForm({ ...recForm, diagnosis: e.target.value })} placeholder="Ej: Control rutinario. Animal sano." />
+          <Input label="Tratamiento" value={recForm.treatment} onChange={(e) => setRecForm({ ...recForm, treatment: e.target.value })} placeholder="Ej: Vacuna antirrábica" />
+          <Input label="Notas internas" value={recForm.notes} onChange={(e) => setRecForm({ ...recForm, notes: e.target.value })} placeholder="Observaciones adicionales…" />
+          <Input label="Próxima visita" type="date" value={recForm.nextVisit} onChange={(e) => setRecForm({ ...recForm, nextVisit: e.target.value })} />
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <Btn v="ghost" onClick={() => setRecModal(false)}>Cancelar</Btn>
+            <Btn v="accent" onClick={saveRecord} disabled={recBusy || !recForm.diagnosis}>
+              {recBusy ? "Guardando…" : "Guardar consulta"}
+            </Btn>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
