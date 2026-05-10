@@ -6,12 +6,14 @@ import ECGLine   from "../ui/ECGLine.jsx";
 
 const NAV = [
   { id:"overview",      icon:"▦",  label:"Inicio" },
+  { id:"stats",         icon:"📊", label:"Estadísticas" },
   { id:"pets",          icon:"🐾", label:"Mascotas" },
+  { id:"pet_timeline",  icon:"📋", label:"Ficha clínica" },
   { id:"grooming",      icon:"✂️", label:"Peluquería" },
   { id:"vaccines",      icon:"💉", label:"Vacunas" },
   { id:"payments",      icon:"💳", label:"Pagos" },
   { id:"appointments",  icon:"🗓", label:"Agenda" },
-  { id:"reservations",  icon:"📋", label:"Reservas online" },
+  { id:"reservations",  icon:"🌐", label:"Reservas online" },
   { id:"users",         icon:"👥", label:"Clientes" },
   { id:"settings",      icon:"⚙️", label:"Configuración" },
 ];

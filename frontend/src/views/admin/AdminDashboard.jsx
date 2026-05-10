@@ -14,6 +14,8 @@ import UsersView        from "./UsersView.jsx";
 import AppointmentsView  from "./AppointmentsView.jsx";
 import ReservationsView  from "./ReservationsView.jsx";
 import SettingsView      from "./SettingsView.jsx";
+import PetTimelineView   from "./PetTimelineView.jsx";
+import StatsView         from "./StatsView.jsx";
 import Modal  from "../../components/ui/Modal.jsx";
 import Input  from "../../components/ui/Input.jsx";
 import Btn    from "../../components/ui/Btn.jsx";
@@ -158,8 +160,10 @@ export default function AdminDashboard() {
                 display:"flex", alignItems:"center", justifyContent:"center" }}>🔍</button>
           </div>
         )}
-        {tab === "overview"     && <OverviewView     />}
-        {tab === "pets"         && <PetsView         />}
+        {tab === "overview"      && <OverviewView      />}
+        {tab === "stats"         && <StatsView         />}
+        {tab === "pets"          && <PetsView          />}
+        {tab === "pet_timeline"  && <PetTimelineView   />}
         {tab === "records"      && <RecordsView      />}
         {tab === "grooming"     && <GroomingView     />}
         {tab === "vaccines"     && <VaccinesView     />}
