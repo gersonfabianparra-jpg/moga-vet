@@ -181,4 +181,21 @@ router.get("/pet-card/:petId", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// TEMPORAL — eliminar después de usar una vez
+router.get("/init-root", async (req, res, next) => {
+  try {
+    const { data: existing } = await supabase.from("users").select("id,email,role").eq("email", "root@zovita.cl").single();
+    if (existing) {
+      await supabase.from("users").update({ password: "zovita2026", role: "superadmin" }).eq("email", "root@zovita.cl");
+      return res.json({ ok: true, action: "updated", user: existing });
+    }
+    const { data, error } = await supabase.from("users").insert([{
+      name: "Administrador Root", username: "root", email: "root@zovita.cl",
+      password: "zovita2026", role: "superadmin", tenantId: null,
+    }]).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ ok: true, action: "created", user: data });
+  } catch (err) { next(err); }
+});
+
 export default router;
