@@ -7,6 +7,7 @@ import AdminDashboard      from "./views/admin/AdminDashboard.jsx";
 import SuperAdminDashboard from "./views/superadmin/SuperAdminDashboard.jsx";
 import ClientPortal        from "./views/client/ClientPortal.jsx";
 import PublicBookView      from "./views/public/PublicBookView.jsx";
+import PetCardView         from "./views/public/PetCardView.jsx";
 
 // Detecta ruta de reserva pública: /#/reservar  o  /#/reservar/TENANT_ID
 function getPublicBookingTenant() {
@@ -18,6 +19,16 @@ function getPublicBookingTenant() {
   return null;
 }
 
+// Detecta ruta de cartola pública: /#/mascota/:petId
+function getPublicPetId() {
+  const hash = window.location.hash;
+  if (hash.startsWith("#/mascota/")) {
+    const id = hash.replace("#/mascota/", "").split("?")[0].trim();
+    return id ? Number(id) : null;
+  }
+  return null;
+}
+
 function Inner() {
   const { currentUser } = useApp();
   const [page, setPage] = useState("landing");
@@ -25,6 +36,10 @@ function Inner() {
   // Reserva pública — accesible sin login
   const publicTenant = getPublicBookingTenant();
   if (publicTenant) return <PublicBookView tenantId={publicTenant} />;
+
+  // Cartola sanitaria pública — accesible sin login
+  const publicPetId = getPublicPetId();
+  if (publicPetId) return <PetCardView petId={publicPetId} />;
 
   if (currentUser) {
     if (currentUser.role === "superadmin") return <SuperAdminDashboard />;

@@ -2,6 +2,10 @@ import { Router } from "express";
 import supabase      from "../config/supabase.js";
 import Appointment   from "../models/Appointment.js";
 import ClinicSettings from "../models/ClinicSettings.js";
+import { store } from "../data/localStore.js";
+import { sendConfirmation } from "../utils/mailer.js";
+
+const useLocal = () => process.env.USE_LOCAL === "true" || !process.env.SUPABASE_URL || process.env.SUPABASE_URL.includes("your-project");
 
 const router = Router();
 
@@ -123,7 +127,57 @@ router.post("/book/:tenantId", async (req, res, next) => {
       guestPetSpecies: petSpecies   || null,
     });
 
+    // Enviar email de confirmación (sin bloquear la respuesta)
+    if (clientEmail) {
+      const settings = await ClinicSettings.find(tenantId).catch(() => null);
+      sendConfirmation({
+        to:          clientEmail,
+        toName:      clientName,
+        petName:     petName || null,
+        type:        type || "consulta",
+        date,
+        time,
+        notes:       notes || null,
+        clinicName:  settings?.clinicName  || "Clínica Veterinaria",
+        clinicPhone: settings?.phone       || null,
+        logoBase64:  settings?.logoBase64  || null,
+      });
+    }
+
     res.status(201).json({ ok: true, id: appt.id });
+  } catch (err) { next(err); }
+});
+
+// GET /api/public/pet-card/:petId — cartola sanitaria pública (sin auth)
+router.get("/pet-card/:petId", async (req, res, next) => {
+  try {
+    const petId = Number(req.params.petId);
+    if (isNaN(petId)) return res.status(400).json({ message: "ID inválido" });
+
+    if (useLocal()) {
+      const pet      = store.pets.findById(petId);
+      if (!pet) return res.status(404).json({ message: "Mascota no encontrada" });
+      const owner    = store.users.findById(pet.ownerId);
+      const vaccines = store.vaccines.findAll(pet.tenantId).filter((v) => v.petId === petId);
+      const settings = null;
+      return res.json({ pet, owner: owner ? { name: owner.name, phone: owner.phone } : null, vaccines, settings });
+    }
+
+    const { data: pet, error: pe } = await supabase.from("pets").select("*").eq("id", petId).single();
+    if (pe || !pet) return res.status(404).json({ message: "Mascota no encontrada" });
+
+    const [{ data: vaccines }, { data: owner }, settingsData] = await Promise.all([
+      supabase.from("vaccines").select("*").eq("petId", petId).order("dateApplied", { ascending: false }),
+      pet.ownerId ? supabase.from("users").select("name,phone").eq("id", pet.ownerId).single() : { data: null },
+      ClinicSettings.find(pet.tenantId).catch(() => null),
+    ]);
+
+    res.json({
+      pet,
+      owner: owner ? { name: owner.name, phone: owner.phone } : null,
+      vaccines: vaccines || [],
+      settings: settingsData ? { clinicName: settingsData.clinicName, logoBase64: settingsData.logoBase64, phone: settingsData.phone } : null,
+    });
   } catch (err) { next(err); }
 });
 

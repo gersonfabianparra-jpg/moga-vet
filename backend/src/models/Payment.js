@@ -35,6 +35,18 @@ const Payment = {
     if (error) throw error;
     return data;
   },
+  abono: async (id, abonoAmount, method) => {
+    if (useLocal()) return store.payments.abono(id, abonoAmount, method);
+    const { data: current, error: fe } = await supabase.from("payments").select("amount, amountPaid").eq("id", id).single();
+    if (fe) throw fe;
+    const prev = current.amountPaid || 0;
+    const newPaid = Math.min(current.amount, prev + abonoAmount);
+    const newStatus = newPaid >= current.amount ? "pagado" : "abonado";
+    const fields = { amountPaid: newPaid, status: newStatus, ...(method ? { method } : {}) };
+    const { data, error } = await supabase.from("payments").update(fields).eq("id", id).select().single();
+    if (error) throw error;
+    return data;
+  },
   markPaid: async (id, method) => {
     if (useLocal()) return store.payments.markPaid(id, method);
     const { data, error } = await supabase.from("payments").update({ status: "pagado", method }).eq("id", id).select().single();

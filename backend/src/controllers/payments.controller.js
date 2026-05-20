@@ -31,6 +31,15 @@ export const update = async (req, res, next) => {
   }
 };
 
+export const abono = async (req, res, next) => {
+  try {
+    const amount = Number(req.body.amount);
+    if (!amount || amount <= 0) return res.status(400).json({ error: "Monto debe ser mayor a 0" });
+    const payment = await Payment.abono(Number(req.params.id), amount, req.body.method || null);
+    res.json(payment);
+  } catch (err) { next(err); }
+};
+
 export const markPaid = async (req, res, next) => {
   try {
     const payment = await Payment.markPaid(Number(req.params.id), req.body.method);

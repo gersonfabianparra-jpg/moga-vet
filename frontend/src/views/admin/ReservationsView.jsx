@@ -3,6 +3,7 @@ import { useApp } from "../../context/AppContext.jsx";
 import { useNotify } from "../../context/NotificationContext.jsx";
 import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import T from "../../styles/tokens.js";
+import { buildWhatsAppLink } from "../../styles/helpers.js";
 import PageTitle from "../../components/layout/PageTitle.jsx";
 import Btn from "../../components/ui/Btn.jsx";
 import Modal from "../../components/ui/Modal.jsx";
@@ -30,7 +31,7 @@ function fmtDate(iso) {
 }
 
 export default function ReservationsView() {
-  const { appointments, updateAppointment, removeAppointment, currentUser } = useApp();
+  const { appointments, updateAppointment, removeAppointment, currentUser, settings } = useApp();
   const notify = useNotify();
   const { isMobile } = useBreakpoint();
 
@@ -216,10 +217,22 @@ export default function ReservationsView() {
                   </div>
                 )}
 
-                {/* Estado */}
-                <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: st.bg, color: st.color, flexShrink: 0 }}>
-                  {st.label}
-                </span>
+                {/* Estado + WA */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+                  {appt.guestPhone && (() => {
+                    const waLink = buildWhatsAppLink({ phone: appt.guestPhone, name: appt.guestName, petName: appt.guestPetName, type: appt.type, date: appt.date, time: appt.time, clinicName: settings?.clinicName });
+                    return waLink ? (
+                      <a href={waLink} target="_blank" rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: "#dcfce7", color: "#15803d", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                        💬 WA
+                      </a>
+                    ) : null;
+                  })()}
+                  <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: st.bg, color: st.color }}>
+                    {st.label}
+                  </span>
+                </div>
               </div>
             );
           })}
@@ -291,11 +304,22 @@ export default function ReservationsView() {
             </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, flexWrap: "wrap", gap: 8 }}>
             <Btn v="danger" onClick={handleDelete} disabled={deleting}>
               {deleting ? "Eliminando…" : "Eliminar reserva"}
             </Btn>
-            <Btn v="ghost" onClick={() => setSelected(null)}>Cerrar</Btn>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {selected.guestPhone && (() => {
+                const waLink = buildWhatsAppLink({ phone: selected.guestPhone, name: selected.guestName, petName: selected.guestPetName, type: selected.type, date: selected.date, time: selected.time, clinicName: settings?.clinicName });
+                return waLink ? (
+                  <a href={waLink} target="_blank" rel="noreferrer"
+                    style={{ padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: 700, background: "#dcfce7", color: "#15803d", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+                    💬 WhatsApp
+                  </a>
+                ) : null;
+              })()}
+              <Btn v="ghost" onClick={() => setSelected(null)}>Cerrar</Btn>
+            </div>
           </div>
         </Modal>
       )}

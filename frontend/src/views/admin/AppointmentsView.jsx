@@ -3,7 +3,7 @@ import { useApp } from "../../context/AppContext.jsx";
 import { useNotify } from "../../context/NotificationContext.jsx";
 import { useBreakpoint } from "../../hooks/useBreakpoint.js";
 import T from "../../styles/tokens.js";
-import { fmtDate, spIcon } from "../../styles/helpers.js";
+import { fmtDate, spIcon, buildWhatsAppLink } from "../../styles/helpers.js";
 import Modal from "../../components/ui/Modal.jsx";
 import Btn   from "../../components/ui/Btn.jsx";
 import Input from "../../components/ui/Input.jsx";
@@ -91,7 +91,7 @@ export default function AppointmentsView() {
     appointments, pets, users,
     addAppointment, updateAppointment, removeAppointment,
     blockedSlots, addBlockedSlot, removeBlockedSlot,
-    currentUser,
+    currentUser, settings,
   } = useApp();
   const notify = useNotify();
 
@@ -705,8 +705,19 @@ export default function AppointmentsView() {
           {/* Panel de reserva pública */}
           {form.guestName && (
             <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: 10, padding: "12px 16px", marginTop: 4 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#4338CA", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-                📱 Reserva pública — cliente sin cuenta
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#4338CA", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  📱 Reserva pública — cliente sin cuenta
+                </div>
+                {form.guestPhone && (() => {
+                  const waLink = buildWhatsAppLink({ phone: form.guestPhone, name: form.guestName, petName: form.guestPetName, type: form.type, date: form.date, time: form.time, clinicName: settings?.clinicName });
+                  return waLink ? (
+                    <a href={waLink} target="_blank" rel="noreferrer"
+                      style={{ padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: "#dcfce7", color: "#15803d", textDecoration: "none", display: "flex", alignItems: "center", gap: 5 }}>
+                      💬 WhatsApp
+                    </a>
+                  ) : null;
+                })()}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 13, color: "#334155" }}>
                 <div><span style={{ fontWeight: 700 }}>Nombre:</span> {form.guestName}</div>
@@ -721,6 +732,22 @@ export default function AppointmentsView() {
               </div>
             </div>
           )}
+
+          {/* WA para cliente registrado con teléfono */}
+          {!form.guestName && form.clientId && modal?.mode === "edit" && (() => {
+            const client = users.find((u) => u.id === +form.clientId);
+            const pet    = pets.find((p) => p.id === +form.petId);
+            if (!client?.phone) return null;
+            const waLink = buildWhatsAppLink({ phone: client.phone, name: client.name, petName: pet?.name, type: form.type, date: form.date, time: form.time, clinicName: settings?.clinicName });
+            return waLink ? (
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <a href={waLink} target="_blank" rel="noreferrer"
+                  style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: "#dcfce7", color: "#15803d", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  💬 WhatsApp a {client.name.split(" ")[0]}
+                </a>
+              </div>
+            ) : null;
+          })()}
 
           {modal.mode === "edit" && (
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>

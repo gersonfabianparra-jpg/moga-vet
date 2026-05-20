@@ -62,6 +62,14 @@ let payments = [
 ];
 
 let blockedSlots = [];
+let inventory = [
+  { id:1, tenantId:1, name:"Antirrábica",        category:"vacuna",        stock:15, minStock:5,  unit:"frasco",  price:8500,  notes:"Refrigerar 2-8°C" },
+  { id:2, tenantId:1, name:"Sétuple canina",      category:"vacuna",        stock:8,  minStock:5,  unit:"frasco",  price:12000, notes:"" },
+  { id:3, tenantId:1, name:"Triple felina",        category:"vacuna",        stock:3,  minStock:5,  unit:"frasco",  price:9500,  notes:"Stock bajo" },
+  { id:4, tenantId:1, name:"Amoxicilina 500mg",   category:"medicamento",   stock:50, minStock:10, unit:"unidad",  price:1200,  notes:"Antibiótico" },
+  { id:5, tenantId:1, name:"Meloxicam 1mg/ml",    category:"medicamento",   stock:4,  minStock:5,  unit:"frasco",  price:5800,  notes:"AINE" },
+  { id:6, tenantId:1, name:"Shampoo hipoalergénico", category:"peluqueria", stock:6,  minStock:3,  unit:"unidad",  price:7500,  notes:"250ml" },
+];
 
 const nextId = (arr) => Math.max(0, ...arr.map((x) => x.id)) + 1;
 const byTenant = (arr, tenantId) => tenantId == null ? arr : arr.filter((x) => x.tenantId === tenantId);
@@ -150,15 +158,46 @@ export const store = {
       blockedSlots.splice(i, 1);
     },
   },
+  inventory: {
+    findAll: (tenantId) => byTenant([...inventory], tenantId),
+    findById: (id) => inventory.find((i) => i.id === id) ?? null,
+    create: (item) => { const rec = { ...item, id: nextId(inventory) }; inventory.push(rec); return rec; },
+    update: (id, fields) => {
+      const i = inventory.findIndex((x) => x.id === id);
+      if (i === -1) throw new Error("No encontrado");
+      inventory[i] = { ...inventory[i], ...fields };
+      return { ...inventory[i] };
+    },
+    remove: (id) => {
+      const i = inventory.findIndex((x) => x.id === id);
+      if (i === -1) throw new Error("No encontrado");
+      inventory.splice(i, 1);
+    },
+  },
   payments: {
     findAll:       (tenantId)  => byTenant([...payments], tenantId).sort((a,b) => b.date.localeCompare(a.date)),
     findByClientId:(clientId)  => payments.filter((p) => p.clientId === clientId).sort((a,b) => b.date.localeCompare(a.date)),
-    create:        (p)         => { const rec = { ...p, id: nextId(payments) }; payments.push(rec); return rec; },
+    create:        (p)         => { const rec = { ...p, id: nextId(payments), amountPaid: 0 }; payments.push(rec); return rec; },
     markPaid:      (id, method) => {
       const p = payments.find((p) => p.id === id);
       if (!p) throw new Error("No encontrado");
-      p.status = "pagado"; p.method = method;
+      p.status = "pagado"; p.method = method; p.amountPaid = p.amount;
       return { ...p };
+    },
+    abono: (id, abonoAmount, method) => {
+      const p = payments.find((x) => x.id === id);
+      if (!p) throw new Error("No encontrado");
+      const prev = p.amountPaid || 0;
+      p.amountPaid = Math.min(p.amount, prev + abonoAmount);
+      p.status = p.amountPaid >= p.amount ? "pagado" : "abonado";
+      if (method) p.method = method;
+      return { ...p };
+    },
+    update: (id, fields) => {
+      const i = payments.findIndex((x) => x.id === id);
+      if (i === -1) throw new Error("No encontrado");
+      payments[i] = { ...payments[i], ...fields };
+      return { ...payments[i] };
     },
   },
 };

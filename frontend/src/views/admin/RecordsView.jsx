@@ -12,6 +12,175 @@ import Select from "../../components/ui/Select.jsx";
 import Modal  from "../../components/ui/Modal.jsx";
 import TypeBadge from "../../components/ui/badges/TypeBadge.jsx";
 
+/* ── Generador PDF de receta ─────────────────────────────────────────────── */
+async function generatePrescriptionPDF({ record, pet, owner, settings, medications, notes, isRetained }) {
+  const { jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+  const doc = new jsPDF();
+  const W = doc.internal.pageSize.getWidth();
+
+  // ── Cabecera clínica
+  let y = 18;
+  if (settings?.logoBase64) {
+    try { doc.addImage(settings.logoBase64, "PNG", 14, 10, 22, 22); } catch {}
+  }
+  const nameX = settings?.logoBase64 ? 40 : 14;
+  doc.setFontSize(16); doc.setFont("helvetica", "bold");
+  doc.setTextColor(79, 70, 229);
+  doc.text(settings?.clinicName || "Clínica Veterinaria", nameX, y);
+  if (settings?.phone || settings?.address) {
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(120);
+    if (settings?.phone) { y += 5; doc.text(`Tel: ${settings.phone}`, nameX, y); }
+    if (settings?.address) { y += 5; doc.text(settings.address, nameX, y); }
+  }
+
+  // ── Título + badge receta retenida
+  y = 40;
+  doc.setDrawColor(79, 70, 229); doc.setLineWidth(0.5);
+  doc.line(14, y, W - 14, y);
+  y += 8;
+  doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(30);
+  doc.text("RECETA MÉDICA VETERINARIA", W / 2, y, { align: "center" });
+  if (isRetained) {
+    y += 7;
+    doc.setFontSize(9); doc.setFont("helvetica", "bold");
+    doc.setFillColor(220, 38, 38); doc.setTextColor(255);
+    doc.roundedRect(W / 2 - 30, y - 5, 60, 8, 2, 2, "F");
+    doc.text("RECETA RETENIDA", W / 2, y, { align: "center" });
+    doc.setTextColor(30);
+  }
+
+  // ── Datos mascota y propietario
+  y += 14;
+  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(60);
+  const col2 = W / 2 + 4;
+  doc.setFont("helvetica", "bold"); doc.text("Paciente", 14, y);
+  doc.setFont("helvetica", "bold"); doc.text("Propietario/a", col2, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Nombre: ${pet?.name || "—"}`, 14, y);
+  doc.text(`Nombre: ${owner?.name || "—"}`, col2, y);
+  y += 5;
+  doc.text(`Especie: ${pet?.species || "—"} · ${pet?.breed || ""}`, 14, y);
+  doc.text(`Teléfono: ${owner?.phone || "—"}`, col2, y);
+  y += 5;
+  doc.text(`Edad: ${pet?.age ? `${pet.age} año(s)` : "—"}  Peso: ${record?.weight ? `${record.weight} kg` : "—"}`, 14, y);
+  y += 5;
+  doc.text(`Fecha: ${record?.date || new Date().toISOString().slice(0,10)}`, 14, y);
+  doc.text(`Veterinario/a: ${record?.vet || "—"}`, col2, y);
+
+  // ── Tabla de medicamentos
+  y += 10;
+  doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(30);
+  doc.text("Medicamentos prescritos", 14, y);
+  y += 4;
+  autoTable(doc, {
+    startY: y,
+    head: [["Medicamento", "Dosis", "Frecuencia", "Duración"]],
+    body: medications.map((m) => [m.name || "—", m.dose || "—", m.frequency || "—", m.days ? `${m.days} días` : "—"]),
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [79, 70, 229] },
+    columnStyles: { 0: { fontStyle: "bold" } },
+  });
+
+  // ── Notas
+  if (notes?.trim()) {
+    const ny = doc.lastAutoTable.finalY + 8;
+    doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(30);
+    doc.text("Indicaciones adicionales:", 14, ny);
+    doc.setFont("helvetica", "normal"); doc.setTextColor(60);
+    const lines = doc.splitTextToSize(notes.trim(), W - 28);
+    doc.text(lines, 14, ny + 6);
+  }
+
+  // ── Firma
+  const signY = doc.lastAutoTable ? doc.lastAutoTable.finalY + (notes?.trim() ? 30 : 20) : 200;
+  doc.setDrawColor(180); doc.setLineWidth(0.3);
+  doc.line(W - 80, signY, W - 14, signY);
+  doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(120);
+  doc.text(record?.vet || "Firma del veterinario/a", W - 47, signY + 5, { align: "center" });
+
+  doc.save(`receta-${pet?.name || "mascota"}-${record?.date || "hoy"}.pdf`);
+}
+
+/* ── Modal de receta ─────────────────────────────────────────────────────── */
+function PrescriptionModal({ record, pet, owner, settings, onClose }) {
+  const emptyMed = () => ({ id: Date.now(), name: "", dose: "", frequency: "", days: "" });
+  const [meds, setMeds]         = useState([emptyMed()]);
+  const [notes, setNotes]       = useState("");
+  const [isRetained, setRetain] = useState(false);
+  const [busy, setBusy]         = useState(false);
+
+  const updateMed = (idx, key, val) => setMeds(meds.map((m, i) => i === idx ? { ...m, [key]: val } : m));
+  const addMed    = () => setMeds([...meds, emptyMed()]);
+  const removeMed = (idx) => meds.length > 1 && setMeds(meds.filter((_, i) => i !== idx));
+
+  const generate = async () => {
+    if (!meds[0].name.trim()) return;
+    setBusy(true);
+    await generatePrescriptionPDF({ record, pet, owner, settings, medications: meds, notes, isRetained });
+    setBusy(false);
+    onClose();
+  };
+
+  const inputStyle = {
+    flex: 1, padding: "8px 10px", borderRadius: 8,
+    border: `1px solid ${T.border}`, background: T.input,
+    color: T.text, fontSize: 12, fontFamily: T.font, outline: "none",
+  };
+
+  return (
+    <Modal title={`Receta médica — ${pet?.name || ""}`} onClose={onClose}>
+      {/* Datos del paciente (solo lectura) */}
+      <div style={{ background: T.panel, borderRadius: 10, padding: "10px 14px", marginBottom: 14,
+        border: `1px solid ${T.border}`, fontSize: 12, color: T.textMuted, display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <span><strong style={{ color: T.text }}>{pet?.name}</strong> · {pet?.species} · {pet?.age} año(s)</span>
+        <span>Vet: <strong style={{ color: T.text }}>{record?.vet || "—"}</strong></span>
+        <span>Fecha: <strong style={{ color: T.text }}>{record?.date || "—"}</strong></span>
+      </div>
+
+      {/* Lista de medicamentos */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: T.textMuted, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        Medicamentos
+      </div>
+      {meds.map((m, idx) => (
+        <div key={m.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 60px 28px", gap: 6, marginBottom: 8, alignItems: "center" }}>
+          <input style={inputStyle} placeholder="Nombre del medicamento *" value={m.name}    onChange={(e) => updateMed(idx, "name",      e.target.value)} />
+          <input style={inputStyle} placeholder="Dosis"                    value={m.dose}    onChange={(e) => updateMed(idx, "dose",      e.target.value)} />
+          <input style={inputStyle} placeholder="Frecuencia"               value={m.frequency} onChange={(e) => updateMed(idx, "frequency", e.target.value)} />
+          <input style={inputStyle} type="number" min="1" placeholder="Días" value={m.days}  onChange={(e) => updateMed(idx, "days",      e.target.value)} />
+          <button onClick={() => removeMed(idx)}
+            style={{ background: "rgba(220,38,38,0.1)", border: "none", color: "#DC2626", borderRadius: 6, cursor: "pointer", fontSize: 14, padding: "4px 0" }}>✕</button>
+        </div>
+      ))}
+      <button onClick={addMed}
+        style={{ fontSize: 12, color: T.brand, background: "transparent", border: `1px dashed ${T.border}`,
+          borderRadius: 8, cursor: "pointer", padding: "6px 14px", fontFamily: T.font, width: "100%", marginBottom: 14 }}>
+        ＋ Agregar medicamento
+      </button>
+
+      <Input label="Indicaciones adicionales" textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej: Administrar con alimento, reposo 5 días…" />
+
+      {/* Receta retenida */}
+      <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: -4, marginBottom: 8 }}>
+        <input type="checkbox" checked={isRetained} onChange={(e) => setRetain(e.target.checked)}
+          style={{ width: 16, height: 16, accentColor: "#DC2626", cursor: "pointer" }} />
+        <span style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>
+          Receta retenida
+        </span>
+        <span style={{ fontSize: 11, color: T.textMuted }}>(medicamento de control / psicotrópico)</span>
+      </label>
+
+      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <Btn v="ghost" onClick={onClose}>Cancelar</Btn>
+        <Btn v="accent" onClick={generate} disabled={busy || !meds[0]?.name?.trim()}>
+          {busy ? "Generando PDF…" : "📄 Generar receta PDF"}
+        </Btn>
+      </div>
+    </Modal>
+  );
+}
+
 const UNLOCK_KEY = "moga_records_unlocked";
 const TODAY = new Date().toISOString().slice(0, 10);
 const EMPTY = { petId:"", date:TODAY, vet:"", type:"Control", diagnosis:"", treatment:"", weight:"", temperature:"", notes:"", nextVisit:"" };
@@ -96,13 +265,14 @@ function LockScreen({ onUnlock }) {
 
 // ── Vista principal ───────────────────────────────────────────────────────────
 export default function RecordsView() {
-  const { records, pets, users, addRecord, recordsLoaded } = useApp();
+  const { records, pets, users, settings, addRecord, recordsLoaded } = useApp();
   const { isMobile } = useBreakpoint();
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(UNLOCK_KEY) === "1");
   const [search, setSearch]     = useState("");
   const [petFilter, setPetFilter] = useState("");
   const [modal, setModal]       = useState(false);
   const [form, setForm]         = useState(EMPTY);
+  const [rxTarget, setRxTarget] = useState(null);
 
   if (!unlocked) return <LockScreen onUnlock={() => setUnlocked(true)} />;
 
@@ -156,10 +326,11 @@ export default function RecordsView() {
       </div>
 
       <TableWrap
-        heads={["Mascota","Fecha","Tipo","Diagnóstico","Tratamiento","Veterinario/a"]}
+        heads={["Mascota","Fecha","Tipo","Diagnóstico","Tratamiento","Veterinario/a",""]}
         empty={filtered.length === 0 && recordsLoaded ? "Sin registros encontrados." : undefined}>
         {filtered.map((r) => {
-          const pet = pets.find((p) => p.id === r.petId);
+          const pet   = pets.find((p) => p.id === r.petId);
+          const owner = users.find((u) => u.id === pet?.ownerId);
           return (
             <TR key={r.id}>
               <TD bold>
@@ -184,10 +355,30 @@ export default function RecordsView() {
                 </div>
               </TD>
               <TD muted>{(r.vet || "").replace("Dra. ","").replace("Dr. ","")}</TD>
+              <TD>
+                <button
+                  onClick={() => setRxTarget({ record: r, pet, owner })}
+                  title="Generar receta médica"
+                  style={{ padding:"5px 10px", borderRadius:8, border:"none", background:"rgba(99,102,241,0.15)",
+                    color:"#818CF8", cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:T.font,
+                    whiteSpace:"nowrap" }}>
+                  📋 Receta
+                </button>
+              </TD>
             </TR>
           );
         })}
       </TableWrap>
+
+      {rxTarget && (
+        <PrescriptionModal
+          record={rxTarget.record}
+          pet={rxTarget.pet}
+          owner={rxTarget.owner}
+          settings={settings}
+          onClose={() => setRxTarget(null)}
+        />
+      )}
 
       {modal && (
         <Modal title="Nueva ficha médica" onClose={() => setModal(false)}>

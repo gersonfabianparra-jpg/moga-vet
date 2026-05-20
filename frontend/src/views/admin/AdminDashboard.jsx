@@ -15,6 +15,7 @@ import AppointmentsView  from "./AppointmentsView.jsx";
 import ReservationsView  from "./ReservationsView.jsx";
 import SettingsView      from "./SettingsView.jsx";
 import StatsView         from "./StatsView.jsx";
+import InventoryView     from "./InventoryView.jsx";
 import Modal  from "../../components/ui/Modal.jsx";
 import Input  from "../../components/ui/Input.jsx";
 import Btn    from "../../components/ui/Btn.jsx";
@@ -71,7 +72,7 @@ function ProfileModal({ onClose }) {
 }
 
 export default function AdminDashboard() {
-  const { currentUser, logout, vaccines, payments, appointments, settings, exitImpersonation } = useApp();
+  const { currentUser, logout, vaccines, payments, appointments, inventory, settings, exitImpersonation } = useApp();
   const { isMobile } = useBreakpoint();
   const [tab, setTab]               = useState("overview");
   const [search, setSearch]         = useState(false);
@@ -82,6 +83,7 @@ export default function AdminDashboard() {
   const pendingPay        = payments.filter((p) => p.status === "pendiente").length;
   const pendingAppts      = appointments.filter((a) => a.status === "pendiente").length;
   const pendingReservations = appointments.filter((a) => a.guestName && a.status === "pendiente").length;
+  const lowStockCount = inventory.filter((i) => i.stock <= i.minStock).length;
 
   // Ctrl+K / Cmd+K
   useEffect(() => {
@@ -125,7 +127,7 @@ export default function AdminDashboard() {
         onLogout={logout}
         onSearch={() => setSearch(true)}
         onEditProfile={() => setProfile(true)}
-        badges={{ vaccines: urgentVax, payments: pendingPay, appointments: pendingAppts, reservations: pendingReservations }}
+        badges={{ vaccines: urgentVax, payments: pendingPay, appointments: pendingAppts, reservations: pendingReservations, inventory: lowStockCount }}
         isMobile={isMobile}
         open={sidebarOpen}
         onClose={() => setSidebar(false)}
@@ -166,6 +168,7 @@ export default function AdminDashboard() {
         {tab === "grooming"     && <GroomingView     />}
         {tab === "vaccines"     && <VaccinesView     />}
         {tab === "payments"     && <PaymentsView     />}
+        {tab === "inventory"    && <InventoryView    />}
         {tab === "appointments"  && <AppointmentsView  />}
         {tab === "reservations"  && <ReservationsView  />}
         {tab === "users"         && <UsersView         />}

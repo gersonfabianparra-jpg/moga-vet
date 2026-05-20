@@ -10,6 +10,7 @@ import * as usersService         from "../services/users.service.js";
 import * as appointmentsService  from "../services/appointments.service.js";
 import * as blockedSlotsService  from "../services/blockedSlots.service.js";
 import * as settingsService      from "../services/settings.service.js";
+import * as inventoryService     from "../services/inventory.service.js";
 
 const AppContext = createContext(null);
 
@@ -35,7 +36,7 @@ const SUPERADMIN_USER_KEY = "moga_root_user";
 const initialState = {
   currentUser: JSON.parse(localStorage.getItem("moga_user") || "null"),
   users: [], pets: [], records: [], grooming: [], vaccines: [], payments: [],
-  appointments: [], blockedSlots: [],
+  appointments: [], blockedSlots: [], inventory: [],
   settings: null,
   loading: false,
   recordsLoaded: false,
@@ -79,6 +80,14 @@ function reducer(state, action) {
       return { ...state, blockedSlots: [...state.blockedSlots, action.payload] };
     case "REMOVE_BLOCKED_SLOT":
       return { ...state, blockedSlots: state.blockedSlots.filter((b) => b.id !== action.payload) };
+    case "SET_INVENTORY":
+      return { ...state, inventory: action.payload };
+    case "ADD_INVENTORY":
+      return { ...state, inventory: [...state.inventory, action.payload] };
+    case "UPDATE_INVENTORY":
+      return { ...state, inventory: state.inventory.map((i) => i.id === action.payload.id ? action.payload : i) };
+    case "REMOVE_INVENTORY":
+      return { ...state, inventory: state.inventory.filter((i) => i.id !== action.payload) };
     default: return state;
   }
 }
@@ -89,7 +98,6 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!state.currentUser) return;
     if (state.currentUser.role === "superadmin") return;
-    // Skip if data already in memory (e.g. triggered by updateProfile dispatching SET_USER)
     if (state.pets.length > 0 || state.users.length > 0) return;
     loadAll();
   }, [state.currentUser]);
@@ -97,10 +105,10 @@ export function AppProvider({ children }) {
   // Sync cache whenever mutable data changes so refresh never shows stale data
   useEffect(() => {
     if (!state.currentUser || state.currentUser.role === "superadmin" || state.loading) return;
-    const { pets, users, vaccines, grooming, payments, appointments, blockedSlots } = state;
+    const { pets, users, vaccines, grooming, payments, appointments, blockedSlots, inventory, settings } = state;
     if (!pets.length && !users.length) return; // skip before first load
-    writeCache({ pets, users, vaccines, grooming, payments, appointments, blockedSlots });
-  }, [state.pets, state.users, state.vaccines, state.grooming, state.payments, state.appointments, state.blockedSlots]);
+    writeCache({ pets, users, vaccines, grooming, payments, appointments, blockedSlots, inventory, settings });
+  }, [state.pets, state.users, state.vaccines, state.grooming, state.payments, state.appointments, state.blockedSlots, state.settings]);
 
   const loadAll = async () => {
     dispatch({ type: "SET_LOADING", payload: true });
@@ -108,7 +116,7 @@ export function AppProvider({ children }) {
     // ── Servir desde caché si está vigente ──
     const cached = readCache();
     if (cached) {
-      dispatch({ type: "SET_DATA", payload: { ...cached, records: [], recordsLoaded: false } });
+      dispatch({ type: "SET_DATA", payload: { ...cached, records: [], recordsLoaded: false, settings: cached.settings || null } });
       // Fichas en background (caché no incluye records por su tamaño)
       recordsService.getRecords()
         .then((records) => dispatch({ type: "SET_RECORDS", payload: records }))
@@ -118,7 +126,7 @@ export function AppProvider({ children }) {
 
     // ── Carga inicial sin records (más rápido) ──
     try {
-      const [users, pets, vaccines, grooming, payments, appointments, blockedSlots, settingsData] = await Promise.all([
+      const [users, pets, vaccines, grooming, payments, appointments, blockedSlots, settingsData, inventory] = await Promise.all([
         usersService.getUsers(),
         petsService.getPets(),
         vaccinesService.getVaccines(),
@@ -127,9 +135,10 @@ export function AppProvider({ children }) {
         appointmentsService.getAppointments().catch(() => []),
         blockedSlotsService.getBlockedSlots().catch(() => []),
         settingsService.getSettings().catch(() => null),
+        inventoryService.getInventory().catch(() => []),
       ]);
-      const fastData = { users, pets, vaccines, grooming, payments, appointments, blockedSlots };
-      dispatch({ type: "SET_DATA", payload: { ...fastData, records: [], recordsLoaded: false, settings: settingsData } });
+      const fastData = { users, pets, vaccines, grooming, payments, appointments, blockedSlots, inventory, settings: settingsData };
+      dispatch({ type: "SET_DATA", payload: { ...fastData, records: [], recordsLoaded: false } });
       writeCache(fastData);
 
       // ── Fichas en background (no bloquean la UI) ──
@@ -252,6 +261,11 @@ export function AppProvider({ children }) {
     const data = await paymentsService.markPaid(id, method);
     dispatch({ type: "UPDATE_PAYMENT", payload: data });
   };
+  const abonoPayment = async (id, amount, method) => {
+    const data = await paymentsService.abonoPayment(id, amount, method);
+    dispatch({ type: "UPDATE_PAYMENT", payload: data });
+    return data;
+  };
   const addAppointment = async (appt) => {
     const data = await appointmentsService.createAppointment(appt);
     dispatch({ type: "ADD_APPOINTMENT", payload: data });
@@ -303,6 +317,25 @@ export function AppProvider({ children }) {
     await blockedSlotsService.removeBlockedSlot(id);
     dispatch({ type: "REMOVE_BLOCKED_SLOT", payload: id });
   };
+  const addInventoryItem = async (item) => {
+    const data = await inventoryService.createItem(item);
+    dispatch({ type: "ADD_INVENTORY", payload: data });
+    return data;
+  };
+  const updateInventoryItem = async (id, fields) => {
+    const data = await inventoryService.updateItem(id, fields);
+    dispatch({ type: "UPDATE_INVENTORY", payload: data });
+    return data;
+  };
+  const adjustInventoryStock = async (id, delta) => {
+    const data = await inventoryService.adjustStock(id, delta);
+    dispatch({ type: "UPDATE_INVENTORY", payload: data });
+    return data;
+  };
+  const removeInventoryItem = async (id) => {
+    await inventoryService.deleteItem(id);
+    dispatch({ type: "REMOVE_INVENTORY", payload: id });
+  };
 
   return (
     <AppContext.Provider value={{
@@ -313,10 +346,11 @@ export function AppProvider({ children }) {
       addRecord, updateRecord,
       addGrooming, removeGrooming, updateGroomingStatus,
       addVaccine, updateVaccine, removeVaccine,
-      addPayment, updatePayment, removePayment, markPaid,
+      addPayment, updatePayment, removePayment, markPaid, abonoPayment,
       addUser, updateUser, removeUser,
       addAppointment, updateAppointment, removeAppointment,
       addBlockedSlot, removeBlockedSlot, updateSettings,
+      addInventoryItem, updateInventoryItem, adjustInventoryStock, removeInventoryItem,
     }}>
       {children}
     </AppContext.Provider>

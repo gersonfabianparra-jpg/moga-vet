@@ -239,6 +239,10 @@ function PetDetail({ pet, users, records, vaccines, onBack }) {
   // ── PDF preview ──────────────────────────────────────────────────────────
   const [pdfPreview, setPdfPreview] = useState(null);
 
+  // ── QR cartola ───────────────────────────────────────────────────────────
+  const [qrModal, setQrModal] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState("");
+
   // ── Fotos ────────────────────────────────────────────────────────────────
   const [photos, setPhotos]       = useState([]);
   const [photoLoading, setPhotoLoading] = useState(true);
@@ -393,6 +397,19 @@ function PetDetail({ pet, users, records, vaccines, onBack }) {
                   background:T.panel, color:T.text, cursor:"pointer", fontSize:12,
                   fontWeight:700, fontFamily:T.font, display:"flex", alignItems:"center", gap:6 }}>
                 📄 Vista previa PDF
+              </button>
+              {/* QR cartola */}
+              <button onClick={async () => {
+                const QRCode = (await import("qrcode")).default;
+                const url = `${window.location.origin}${window.location.pathname}#/mascota/${pet.id}`;
+                const dataUrl = await QRCode.toDataURL(url, { width: 300, margin: 1, color: { dark:"#000", light:"#fff" } });
+                setQrDataUrl(dataUrl);
+                setQrModal(true);
+              }}
+                style={{ padding:"7px 14px", borderRadius:10, border:`1.5px solid rgba(99,102,241,0.4)`,
+                  background:"rgba(99,102,241,0.1)", color:"#818CF8", cursor:"pointer", fontSize:12,
+                  fontWeight:700, fontFamily:T.font, display:"flex", alignItems:"center", gap:6 }}>
+                📱 QR cartola
               </button>
               {/* Nueva entrada */}
               <button onClick={() => { setNewEntryOpen(!newEntryOpen); setNewEntryErr(""); }}
@@ -710,6 +727,36 @@ function PetDetail({ pet, users, records, vaccines, onBack }) {
         </div>{/* fin columna derecha */}
       </div>
     </div>
+
+    {/* Modal QR cartola */}
+    {qrModal && (
+      <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.72)", zIndex:400,
+        display:"flex", alignItems:"center", justifyContent:"center" }}
+        onClick={(e) => { if (e.target === e.currentTarget) setQrModal(false); }}>
+        <div style={{ background:T.panel, borderRadius:20, boxShadow:"0 20px 60px rgba(0,0,0,0.5)",
+          padding:"28px 28px 22px", width:320, textAlign:"center", border:`1px solid ${T.border}` }}>
+          <div style={{ fontSize:15, fontWeight:800, color:T.text, marginBottom:4 }}>📱 Cartola sanitaria QR</div>
+          <div style={{ fontSize:12, color:T.textMuted, marginBottom:18 }}>
+            Comparte este QR con el propietario/a de <strong style={{ color:T.text }}>{pet.name}</strong>
+          </div>
+          {qrDataUrl
+            ? <img src={qrDataUrl} alt="QR cartola" style={{ width:200, height:200, borderRadius:12, background:"#fff", padding:8, margin:"0 auto 16px" }}/>
+            : <div style={{ width:200, height:200, margin:"0 auto 16px", background:T.border, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", color:T.textMuted }}>Generando…</div>
+          }
+          <div style={{ display:"flex", gap:8, justifyContent:"center" }}>
+            <button
+              onClick={() => { const url = `${window.location.origin}${window.location.pathname}#/mascota/${pet.id}`; navigator.clipboard.writeText(url).catch(() => {}); }}
+              style={{ padding:"8px 16px", borderRadius:10, border:`1px solid ${T.border}`, background:T.brandLight, color:T.brand, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:T.font }}>
+              🔗 Copiar enlace
+            </button>
+            <button onClick={() => setQrModal(false)}
+              style={{ padding:"8px 16px", borderRadius:10, border:`1px solid ${T.border}`, background:"transparent", color:T.textMuted, cursor:"pointer", fontSize:12, fontFamily:T.font }}>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Modal previsualización PDF */}
     {pdfPreview && (

@@ -17,14 +17,68 @@ const EMPTY = { concept:"", petId:"", clientId:"", date:TODAY, amount:"", catego
 
 const Dot = ({ color }) => <span style={{ display:"inline-block", width:7, height:7, borderRadius:"50%", background:color, flexShrink:0, marginTop:1 }}/>;
 
+function statusStyle(status) {
+  if (status === "pagado")   return { bg:"#14532d22", color:"#22C55E", dot:"#22c55e", label:"Pagado" };
+  if (status === "abonado")  return { bg:"#1e3a5f33", color:"#60A5FA", dot:"#60a5fa", label:"Abonado" };
+  return { bg:"#78350f22", color:"#F59E0B", dot:"#f59e0b", label:"Pendiente" };
+}
+
+function AbonoModal({ payment, onClose, onSave }) {
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("Efectivo");
+  const [busy,   setBusy]   = useState(false);
+  const [err,    setErr]    = useState("");
+  const paid     = payment.amountPaid || 0;
+  const pending  = payment.amount - paid;
+
+  const save = async () => {
+    const n = +amount;
+    if (!n || n <= 0)       { setErr("Ingresa un monto válido."); return; }
+    if (n > pending)        { setErr(`El abono no puede superar el saldo pendiente (${fmtCLP(pending)}).`); return; }
+    setBusy(true); setErr("");
+    try { await onSave(payment.id, n, method); onClose(); }
+    catch { setErr("Error al registrar abono."); }
+    finally { setBusy(false); }
+  };
+
+  const pct = payment.amount > 0 ? Math.round((paid / payment.amount) * 100) : 0;
+
+  return (
+    <Modal title={`Registrar abono — ${payment.concept}`} onClose={onClose}>
+      {/* Barra de progreso */}
+      <div style={{ marginBottom:16 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:6 }}>
+          <span style={{ color:"#22C55E", fontWeight:700 }}>Pagado: {fmtCLP(paid)}</span>
+          <span style={{ color:"#F59E0B", fontWeight:700 }}>Pendiente: {fmtCLP(pending)}</span>
+        </div>
+        <div style={{ height:10, background:"rgba(255,255,255,0.08)", borderRadius:6, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#6366F1,#22C55E)", borderRadius:6, transition:"width 0.3s" }}/>
+        </div>
+        <div style={{ fontSize:11, color:T.textMuted, marginTop:4, textAlign:"right" }}>{pct}% cancelado · Total: {fmtCLP(payment.amount)}</div>
+      </div>
+      <Input label="Monto del abono (CLP) *" type="number" min="1" max={pending}
+        value={amount} onChange={(e) => { setAmount(e.target.value); setErr(""); }} placeholder={`Máx. ${fmtCLP(pending)}`} />
+      <Select label="Método de pago" value={method} onChange={(e) => setMethod(e.target.value)}>
+        {PAY_METHODS.map((m) => <option key={m}>{m}</option>)}
+      </Select>
+      {err && <div style={{ fontSize:13, color:"#DC2626", marginTop:-6 }}>⚠ {err}</div>}
+      <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+        <Btn v="ghost" onClick={onClose}>Cancelar</Btn>
+        <Btn v="accent" onClick={save} disabled={busy}>{busy ? "Registrando…" : "Registrar abono"}</Btn>
+      </div>
+    </Modal>
+  );
+}
+
 export default function PaymentsView() {
-  const { payments, pets, users, addPayment, updatePayment, removePayment, markPaid } = useApp();
+  const { payments, pets, users, addPayment, updatePayment, removePayment, markPaid, abonoPayment } = useApp();
   const { isMobile } = useBreakpoint();
   const [catF, setCatF]       = useState("");
   const [stF, setStF]         = useState("");
   const [modal, setModal]     = useState(false);
-  const [editTarget, setEditTarget] = useState(null);
+  const [editTarget, setEditTarget]   = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [abonoTarget, setAbonoTarget] = useState(null);
   const [form, setForm]       = useState(EMPTY);
   const [editForm, setEditForm] = useState(EMPTY);
   const [busy, setBusy]       = useState(false);
@@ -86,6 +140,7 @@ export default function PaymentsView() {
         <select value={stF} onChange={(e) => setStF(e.target.value)} className="moga-input" style={{ padding:"9px 12px", border:`1.5px solid ${T.border}`, borderRadius:10, fontSize:14, color:T.text, background:T.panel, fontFamily:T.font }}>
           <option value="">Todos los estados</option>
           <option value="pagado">Pagado</option>
+          <option value="abonado">Abonado</option>
           <option value="pendiente">Pendiente</option>
         </select>
       </div>
@@ -96,26 +151,40 @@ export default function PaymentsView() {
           const client = users.find((u) => u.id === p.clientId);
           return (
             <TR key={p.id}>
-              <TD bold><div style={{ maxWidth:190, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.concept}</div></TD>
+              <TD bold>
+                <div style={{ maxWidth:190, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.concept}</div>
+                {/* Barra abono si hay pago parcial */}
+                {(p.amountPaid > 0 && p.status !== "pagado") && (
+                  <div style={{ marginTop:4 }}>
+                    <div style={{ height:4, background:"rgba(255,255,255,0.08)", borderRadius:4, overflow:"hidden", width:160 }}>
+                      <div style={{ height:"100%", width:`${Math.round(((p.amountPaid||0)/p.amount)*100)}%`, background:"linear-gradient(90deg,#6366F1,#60A5FA)", borderRadius:4 }}/>
+                    </div>
+                    <div style={{ fontSize:10, color:"#60A5FA", marginTop:2 }}>{fmtCLP(p.amountPaid)} de {fmtCLP(p.amount)}</div>
+                  </div>
+                )}
+              </TD>
               <TD>{pet ? `${spIcon(pet.species)} ${pet.name}` : "—"}</TD>
               <TD muted>{client?.name || "—"}</TD>
               <TD><CatBadge cat={p.category}/></TD>
               <TD>{fmtDate(p.date)}</TD>
-              <TD><span style={{ fontWeight:700, color:p.status==="pagado"?T.greenText:T.amberText }}>{fmtCLP(p.amount)}</span></TD>
+              <TD><span style={{ fontWeight:700, color:p.status==="pagado"?"#22C55E":p.status==="abonado"?"#60A5FA":T.amberText }}>{fmtCLP(p.amount)}</span></TD>
               <TD muted>{p.method || "—"}</TD>
               <TD>
-                <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:20, background:p.status==="pagado"?T.green:T.amber, color:p.status==="pagado"?T.greenText:T.amberText, fontSize:12, fontWeight:600 }}>
-                  <Dot color={p.status==="pagado"?"#22c55e":"#f59e0b"}/>{p.status==="pagado"?"Pagado":"Pendiente"}
-                </span>
+                {(() => { const s = statusStyle(p.status); return (
+                  <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:20, background:s.bg, color:s.color, fontSize:12, fontWeight:600 }}>
+                    <Dot color={s.dot}/>{s.label}
+                  </span>
+                ); })()}
               </TD>
               <TD>
                 <div style={{ display:"flex", gap:6, alignItems:"center", flexWrap:"wrap" }}>
-                  {p.status === "pendiente" && (
+                  {(p.status === "pendiente" || p.status === "abonado") && (
                     <>
-                      <select ref={(el) => selRefs.current[p.id]=el} style={{ padding:"4px 8px", border:`1px solid ${T.border}`, borderRadius:6, fontSize:12, fontFamily:T.font, outline:"none" }}>
+                      <Btn v="sm_accent" onClick={() => setAbonoTarget(p)}>＋ Abono</Btn>
+                      <select ref={(el) => selRefs.current[p.id]=el} style={{ padding:"4px 8px", border:`1px solid ${T.border}`, borderRadius:6, fontSize:12, fontFamily:T.font, outline:"none", background:T.input, color:T.text }}>
                         {PAY_METHODS.map((m) => <option key={m}>{m}</option>)}
                       </select>
-                      <Btn v="sm_green" onClick={() => markPaid(p.id, selRefs.current[p.id]?.value || "Efectivo")}>✓ Cobrar</Btn>
+                      <Btn v="sm_green" onClick={() => markPaid(p.id, selRefs.current[p.id]?.value || "Efectivo")}>✓ Cobrar todo</Btn>
                     </>
                   )}
                   <button onClick={() => openEdit(p)}
@@ -151,6 +220,11 @@ export default function PaymentsView() {
             <Btn v="accent" onClick={saveEdit} disabled={busy || !editForm.concept || !editForm.amount}>{busy ? "Guardando…" : "Guardar cambios"}</Btn>
           </div>
         </Modal>
+      )}
+
+      {/* Modal: registrar abono */}
+      {abonoTarget && (
+        <AbonoModal payment={abonoTarget} onClose={() => setAbonoTarget(null)} onSave={abonoPayment} />
       )}
 
       {/* Modal: confirmar eliminación */}

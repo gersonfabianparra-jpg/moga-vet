@@ -1,4 +1,40 @@
 export const fmtCLP = (n) => `$${Number(n).toLocaleString("es-CL")}`;
+
+const TYPE_WA = {
+  consulta:   "Consulta veterinaria",
+  control:    "Control",
+  vacuna:     "Vacunación",
+  peluqueria: "Peluquería",
+  urgencia:   "Urgencia",
+  cirugia:    "Cirugía",
+};
+
+const MONTHS_FULL = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const fmtDateLong = (d) => {
+  if (!d) return "—";
+  const [y, m, day] = d.split("-");
+  return `${+day} de ${MONTHS_FULL[+m - 1]} de ${y}`;
+};
+
+export function buildWhatsAppLink({ phone, name, petName, type, date, time, clinicName, notes }) {
+  if (!phone) return null;
+  const clean = phone.replace(/[\s\-().]/g, "").replace(/^\+/, "");
+  const num = clean.startsWith("56") ? clean : `56${clean.replace(/^0/, "")}`;
+  const typeLabel = TYPE_WA[type] || type || "Cita";
+  const lines = [
+    `Hola ${name ? name.split(" ")[0] : ""}! 👋`,
+    "",
+    `Te confirmamos tu reserva en *${clinicName || "nuestra clínica"}*:`,
+    "",
+    `📅 *Fecha:* ${fmtDateLong(date)}`,
+    `🕐 *Hora:* ${time || "—"}`,
+    `🏥 *Tipo:* ${typeLabel}`,
+  ];
+  if (petName) lines.push(`🐾 *Mascota:* ${petName}`);
+  if (notes)   lines.push(`📝 *Notas:* ${notes}`);
+  lines.push("", "Si tienes alguna consulta, escríbenos aquí. ¡Hasta pronto! 🐾");
+  return `https://wa.me/${num}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
 export const fmtDate = (d) => {
   if (!d) return "—";
   const [y, m, day] = d.split("-");

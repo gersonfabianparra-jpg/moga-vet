@@ -16,6 +16,7 @@ import photosRoutes        from "./routes/photos.routes.js";
 import settingsRoutes      from "./routes/settings.routes.js";
 import publicRoutes        from "./routes/public.routes.js";
 import adminRoutes         from "./routes/admin.routes.js";
+import inventoryRoutes     from "./routes/inventory.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
@@ -52,6 +53,7 @@ app.use("/api/photos",        photosRoutes);
 app.use("/api/settings",      settingsRoutes);
 app.use("/api/public",        publicRoutes);
 app.use("/api/admin",         adminRoutes);
+app.use("/api/inventory",     inventoryRoutes);
 
 app.use(errorHandler);
 
